@@ -1,0 +1,18 @@
+# Conda environment
+env/
+
+# Manim output
+media/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE settings
+.vscode/
+.idea/
+
+# Media files
+*.mp4
+

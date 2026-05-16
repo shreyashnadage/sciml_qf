@@ -1,0 +1,7 @@
+manim
+torch
+numpy
+matplotlib
+scipy
+jupyter
+ipython
