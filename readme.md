@@ -57,23 +57,49 @@ Every module in this course is accompanied by a **Zero-Setup Google Colab Notebo
 
 ---
 
-## 🛠️ Repository Structure
+## 🛠️ Repository Structure & Video Production Suite
 
-If you wish to clone this repository and run the models locally, here is the architecture:
+This repository features both interactive learning materials and a complete **Video Production Suite** to generate educational math animations and synthesized voiceovers.
+
+### Directory Structure
 
 ```text
 SciML-Quant-Finance/
 │
-├── 📂 modules/                   # Google Colab Jupyter Notebooks (.ipynb)
-│   ├── module1_universal_approximation.ipynb
-│   ├── module2_pinns.ipynb
-│   └── ...
+├── 📂 01_neural_taylor_series/        # Module 1 code, scripts, and assets
+├── 📂 02_physics_of_no_arbitrage/     # Module 2 code, scripts, and assets
+├── 📂 03_deep_bsde_solvers/           # Module 3 code, scripts, and assets
 │
-├── 📂 manim_visuals/             # Manim Python scripts used to generate course animations
-│   ├── module1_scenes.py
-│   ├── module2_scenes.py
-│   └── ...
+├── 📂 pipeline/                       # Video generation pipeline orchestrator (director.py)
+│   └── 📂 scene_templates/            # Built-in Manim template visual generators
 │
-├── 📂 data/                      # Synthetic and historical datasets (if applicable)
-├── requirements.txt              # Local Python dependencies
-└── README.md
+├── 📂 ui/                             # Streamlit-based Director's dashboard UI
+│   ├── app.py                         # UI frontend
+│   └── styles.py                      # Custom UI themes/CSS
+│
+├── 📂 templates/                      # Boilerplate configuration and script templates
+├── requirements.txt                   # Project-wide Python dependencies
+└── README.md                          # Root documentation (this file)
+```
+
+---
+
+## 🎬 Video Production Suite
+
+The repo includes a professional, semi-automated pipeline for creating educational videos. It combines **Qwen3-TTS** for voiceovers, **Manim (Community Edition)** for animations, and **FFmpeg** for stitching.
+
+### Getting Started with the UI
+To launch the interactive Director's dashboard:
+1. Ensure the local environment is set up.
+2. Run the following command from the repository root:
+   ```powershell
+   env\python.exe -m streamlit run ui/app.py
+   ```
+3. Open the browser window at `http://localhost:8501`.
+
+### Command Line Direct Execution
+You can also run the pipeline directly via terminal command line:
+```powershell
+env\python.exe pipeline\director.py 01_neural_taylor_series --phase all --quality l
+```
+See the [User Guide](file:///d:/SCIML_QF/user_guide.md) for more comprehensive configuration options, CLI flags, and video design specifications.

@@ -1,0 +1,52 @@
+module: "02_physics_of_no_arbitrage"
+title: "The Physics of No-Arbitrage"
+resolution: "1920x1080"
+fps: 30
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Professional, educational, measured pace."
+
+scenes:
+  - id: "intro_data_cloud"
+    type: animation
+    voiceover: >
+      In our last video, we proved that a neural network can learn 
+      the exact shape of a financial derivative. But we cheated.
+    instruct: "Reflective, setting up a confession."
+    manim_class: "Scene1_EmptyRoom"
+    source: "scenes.py"
+    
+  - id: "pde_reveal"
+    type: equation
+    voiceover: >
+      The answer lies in treating financial mathematics not as a 
+      statistical spreadsheet, but as the laws of physics.
+    instruct: "Deliberate, reverent."
+    equations:
+      - latex: "\\frac{\\partial V}{\\partial t} + \\frac{1}{2}\\sigma^2 S^2 \\frac{\\partial^2 V}{\\partial S^2} + rS \\frac{\\partial V}{\\partial S} - rV = 0"
+        highlight_terms: [2]
+    
+  - id: "code_walkthrough_domain"
+    type: code
+    voiceover: >
+      Welcome back to Colab. Notice we are not importing any analytical 
+      Black-Scholes formulas. Instead of data, we need to give the network 
+      a space to explore.
+    instruct: "Guiding, technical but accessible."
+    code_file: "code/pinn_black_scholes.py"
+    code_range: [26, 43]
+    highlights:
+      - lines: [32, 33]
+        pause: 2
+      - lines: [42]
+        pause: 1.5
+    
+  - id: "training_output"
+    type: artifact
+    voiceover: >
+      The loss drops. The network is learning the geometry of the 
+      market purely by staring at the PDE.
+    instruct: "Triumphant, amazed."
+    artifact_path: "media/pinn_validation.png"
+    animation: "fade_in"

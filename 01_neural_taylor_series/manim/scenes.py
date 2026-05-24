@@ -1,6 +1,18 @@
 from manim import *
 import numpy as np
 from scipy.stats import norm
+import sys
+import os
+import json
+from pathlib import Path
+from manim_voiceover import VoiceoverScene
+
+# Add the project root to sys.path so we can import qwen_voiceover
+root_dir = Path(__file__).resolve().parents[2]
+if str(root_dir) not in sys.path:
+    sys.path.append(str(root_dir))
+
+from qwen_voiceover import QwenSpeechService
 
 # Analytical Black-Scholes for the surface
 def black_scholes_call(S, K, T, sigma, r):
@@ -10,7 +22,55 @@ def black_scholes_call(S, K, T, sigma, r):
     d2 = d1 - sigma * np.sqrt(T)
     return S * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
 
-class OpeningPayoff(Scene):
+class SciMLScene(VoiceoverScene):
+    def setup(self):
+        config_path = os.environ.get("SCENE_CONFIG_PATH")
+        if not config_path or not os.path.exists(config_path):
+            self.scene_config = {
+                "id": "manual",
+                "voiceover": "This is fallback voiceover text.",
+                "module_dir": str(Path(__file__).resolve().parents[2]),
+                "global_config": {"voice": {"speaker": "Ryan"}}
+            }
+        else:
+            with open(config_path, "r") as f:
+                self.scene_config = json.load(f)
+                
+        media_dir = os.path.join(self.scene_config.get("module_dir", "."), "media", "voiceovers")
+        speaker = self.scene_config.get("global_config", {}).get("voice", {}).get("speaker", "Ryan")
+        self.set_speech_service(QwenSpeechService(speaker=speaker, cache_dir=media_dir))
+
+    @property
+    def voiceover_path(self):
+        if "audio_path" in self.scene_config:
+            return os.path.basename(self.scene_config["audio_path"])
+        return None
+
+class SciMLThreeDScene(ThreeDScene, VoiceoverScene):
+    def setup(self):
+        config_path = os.environ.get("SCENE_CONFIG_PATH")
+        if not config_path or not os.path.exists(config_path):
+            self.scene_config = {
+                "id": "manual",
+                "voiceover": "This is fallback voiceover text.",
+                "module_dir": str(Path(__file__).resolve().parents[2]),
+                "global_config": {"voice": {"speaker": "Ryan"}}
+            }
+        else:
+            with open(config_path, "r") as f:
+                self.scene_config = json.load(f)
+                
+        media_dir = os.path.join(self.scene_config.get("module_dir", "."), "media", "voiceovers")
+        speaker = self.scene_config.get("global_config", {}).get("voice", {}).get("speaker", "Ryan")
+        self.set_speech_service(QwenSpeechService(speaker=speaker, cache_dir=media_dir))
+
+    @property
+    def voiceover_path(self):
+        if "audio_path" in self.scene_config:
+            return os.path.basename(self.scene_config["audio_path"])
+        return None
+
+class OpeningPayoff(SciMLScene):
     def construct(self):
         # 2D Payoff Chart
         axes = Axes(
@@ -29,17 +89,33 @@ class OpeningPayoff(Scene):
         
         payoff_label = Text("Call Option Payoff", font_size=24).next_to(payoff, UP, buff=0.5)
         
-        self.play(Create(axes), Write(labels))
-        self.play(Create(payoff), Write(payoff_label))
-        self.wait(2)
+        scene_id = self.scene_config.get("id", "")
         
-        # Highlight the kink
-        dot = Dot(axes.c2p(K, 0), color=RED)
-        kink_text = Text("The Kink: Non-Differentiable", font_size=20, color=RED).next_to(dot, DR)
-        self.play(FadeIn(dot), Write(kink_text))
-        self.wait(2)
+        if "intro_smoothness" in scene_id:
+            with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+                self.play(Create(axes), Write(labels), run_time=tracker.duration * 0.4)
+                self.play(Create(payoff), Write(payoff_label), run_time=tracker.duration * 0.4)
+                self.wait(tracker.duration * 0.2)
+                
+        elif "financial_kink" in scene_id:
+            dot = Dot(axes.c2p(K, 0), color=RED)
+            kink_text = Text("The Kink: Non-Differentiable", font_size=20, color=RED).next_to(dot, DR)
+            
+            self.add(axes, labels, payoff, payoff_label)
+            
+            with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+                self.play(FadeIn(dot), Write(kink_text), run_time=tracker.duration * 0.3)
+                self.wait(tracker.duration * 0.7)
+        else:
+            self.play(Create(axes), Write(labels))
+            self.play(Create(payoff), Write(payoff_label))
+            self.wait(2)
+            dot = Dot(axes.c2p(K, 0), color=RED)
+            kink_text = Text("The Kink: Non-Differentiable", font_size=20, color=RED).next_to(dot, DR)
+            self.play(FadeIn(dot), Write(kink_text))
+            self.wait(2)
 
-class OptionSurfaceWarp(ThreeDScene):
+class OptionSurfaceWarp(SciMLThreeDScene):
     def construct(self):
         axes = ThreeDAxes(
             x_range=[50, 150, 20],
@@ -83,14 +159,12 @@ class OptionSurfaceWarp(ThreeDScene):
             add_vertex_dots=False
         )
 
-        self.play(Create(payoff_curve))
-        self.wait(1)
-        
-        # Pulling backward in time
-        self.play(Create(surface), run_time=3)
-        self.wait(2)
+        with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+            self.play(Create(payoff_curve), run_time=tracker.duration * 0.3)
+            self.play(Create(surface), run_time=tracker.duration * 0.5)
+            self.wait(tracker.duration * 0.2)
 
-class NeuralApproximator(ThreeDScene):
+class NeuralApproximator(SciMLThreeDScene):
     def construct(self):
         axes = ThreeDAxes(
             x_range=[50, 150, 20],
@@ -117,7 +191,6 @@ class NeuralApproximator(ThreeDScene):
         )
         
         # Initial Random Neural Surface (Wrinkled Orange)
-        # Using a simple noise-like function to simulate "untrained" state
         def random_surface_func(s, t):
             val = 20 + 10 * np.sin(s/10) * np.cos(t*5)
             return axes.c2p(s, t, val)
@@ -131,25 +204,47 @@ class NeuralApproximator(ThreeDScene):
         )
 
         self.add(true_surface)
-        self.play(Create(neural_surface))
-        self.wait(1)
-
-        # Morphing animation
-        self.play(
-            neural_surface.animate.become(
-                Surface(
-                    lambda s, t: axes.c2p(s, t, black_scholes_call(s, K, t, sigma, r)),
-                    u_range=[50, 150],
-                    v_range=[0.01, 2],
-                    fill_opacity=0.6,
-                    checkerboard_colors=[ORANGE, YELLOW]
+        scene_id = self.scene_config.get("id", "")
+        
+        if "elastic_sheet" in scene_id:
+            with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+                self.play(Create(neural_surface), run_time=tracker.duration * 0.8)
+                self.wait(tracker.duration * 0.2)
+                
+        elif "training_network" in scene_id:
+            self.add(neural_surface)
+            with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+                self.play(
+                    neural_surface.animate.become(
+                        Surface(
+                            lambda s, t: axes.c2p(s, t, black_scholes_call(s, K, t, sigma, r)),
+                            u_range=[50, 150],
+                            v_range=[0.01, 2],
+                            fill_opacity=0.6,
+                            checkerboard_colors=[ORANGE, YELLOW]
+                        )
+                    ),
+                    run_time=tracker.duration * 0.8
                 )
-            ),
-            run_time=4
-        )
-        self.wait(2)
+                self.wait(tracker.duration * 0.2)
+        else:
+            self.play(Create(neural_surface))
+            self.wait(1)
+            self.play(
+                neural_surface.animate.become(
+                    Surface(
+                        lambda s, t: axes.c2p(s, t, black_scholes_call(s, K, t, sigma, r)),
+                        u_range=[50, 150],
+                        v_range=[0.01, 2],
+                        fill_opacity=0.6,
+                        checkerboard_colors=[ORANGE, YELLOW]
+                    )
+                ),
+                run_time=4
+            )
+            self.wait(2)
 
-class ArchitectureWhiteboard(Scene):
+class ArchitectureWhiteboard(SciMLScene):
     def construct(self):
         # Titles
         input_title = Text("Inputs", font_size=32).shift(UP * 3 + LEFT * 4)
@@ -189,17 +284,61 @@ class ArchitectureWhiteboard(Scene):
         arrow_t = Arrow(t_box.get_right(), mlp_box.get_left() + DOWN * 0.5, buff=0.1, color=WHITE)
         arrow_out = Arrow(mlp_box.get_right(), v_box.get_left(), buff=0.1, color=WHITE)
         
-        # Animation sequence
-        self.play(Write(titles))
-        self.wait(1)
+        with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+            d = tracker.duration
+            self.play(Write(titles), run_time=d * 0.2)
+            self.play(Create(s_box), Create(t_box), run_time=d * 0.2)
+            self.play(Create(arrow_s), Create(arrow_t), run_time=d * 0.1)
+            self.play(Create(mlp_box), run_time=d * 0.2)
+            self.play(Create(arrow_out), Create(v_box), run_time=d * 0.2)
+            self.wait(d * 0.1)
+
+class TaylorApproximation(SciMLScene):
+    def construct(self):
+        # 1. Title / Header
+        title = Text("Taylor Series Approximation of sin(x)", font_size=28).to_edge(UP)
+        self.play(Write(title))
         
-        self.play(Create(s_box), Create(t_box))
-        self.play(Create(arrow_s), Create(arrow_t))
-        self.wait(0.5)
+        # 2. Axes
+        axes = Axes(
+            x_range=[-4, 4, 1],
+            y_range=[-2, 2, 1],
+            axis_config={"include_tip": True, "color": GRAY},
+            x_length=8,
+            y_length=4
+        ).shift(DOWN * 0.5)
         
-        self.play(Create(mlp_box), run_time=2)
-        self.wait(0.5)
+        labels = axes.get_axis_labels(x_label="x", y_label="f(x)")
+        self.play(Create(axes), Write(labels))
         
-        self.play(Create(arrow_out))
-        self.play(Create(v_box))
-        self.wait(3)
+        # 3. Target function: sin(x)
+        target_curve = axes.plot(
+            lambda x: np.sin(x),
+            color=BLUE,
+            x_range=[-4, 4]
+        )
+        target_label = MathTex(r"f(x) = \sin(x)", color=BLUE).next_to(axes.c2p(2, np.sin(2)), UR, buff=0.2)
+        
+        # 4. Taylor polynomials
+        poly_1 = axes.plot(lambda x: x, color=RED, x_range=[-2, 2])
+        label_1 = MathTex(r"P_1(x) = x", color=RED).to_corner(UL).shift(DOWN * 0.8)
+        
+        poly_3 = axes.plot(lambda x: x - (x**3)/6, color=ORANGE, x_range=[-3, 3])
+        label_3 = MathTex(r"P_3(x) = x - \frac{x^3}{3!}", color=ORANGE).to_corner(UL).shift(DOWN * 0.8)
+        
+        poly_5 = axes.plot(lambda x: x - (x**3)/6 + (x**5)/120, color=YELLOW, x_range=[-3.5, 3.5])
+        label_5 = MathTex(r"P_5(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!}", color=YELLOW).to_corner(UL).shift(DOWN * 0.8)
+        
+        poly_7 = axes.plot(lambda x: x - (x**3)/6 + (x**5)/120 - (x**7)/5040, color=GREEN, x_range=[-4, 4])
+        label_7 = MathTex(r"P_7(x) = x - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!}", color=GREEN).to_corner(UL).shift(DOWN * 0.8)
+
+        with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
+            d = tracker.duration
+            self.play(Create(target_curve), Write(target_label), run_time=d * 0.2)
+            self.play(Create(poly_1), Write(label_1), run_time=d * 0.2)
+            self.play(ReplacementTransform(poly_1, poly_3), ReplacementTransform(label_1, label_3), run_time=d * 0.2)
+            self.play(ReplacementTransform(poly_3, poly_5), ReplacementTransform(label_3, label_5), run_time=d * 0.2)
+            self.play(ReplacementTransform(poly_5, poly_7), ReplacementTransform(label_5, label_7), run_time=d * 0.2)
+
+
+

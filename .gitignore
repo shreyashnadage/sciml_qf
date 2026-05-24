@@ -15,4 +15,18 @@ __pycache__/
 
 # Media files
 *.mp4
+*.mp3
+*.wav
 
+# Logs
+*.log
+
+# Scratch scripts
+simple_test.py
+test_qwen_manim.py
+
+# External dependency repos
+Qwen3-TTS/
+
+# Temporary run state
+pipeline/.current_scene.json

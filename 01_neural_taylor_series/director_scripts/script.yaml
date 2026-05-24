@@ -1,0 +1,112 @@
+module: "01_neural_taylor_series"
+title: "The Neural Taylor Series"
+resolution: "1920x1080"
+fps: 30
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Professional, educational, measured pace."
+
+scenes:
+  - id: "intro_smoothness"
+    type: animation
+    voiceover: >
+      In mathematics, we have a deep obsession with smoothness.
+      For centuries, if you wanted to understand a complex, twisting curve, you relied on the ultimate tool of mathematical approximation: the Taylor Series.
+    instruct: "Slow, deliberate, setting the historical stage"
+    manim_class: "OpeningPayoff"
+    source: "scenes.py"
+    
+  - id: "taylor_philosophy"
+    type: animation
+    voiceover: >
+      The philosophy behind a Taylor Series is beautiful: if you know everything about a single point—its value, its slope, its acceleration, its infinite layers of derivatives—you can predict what the rest of the function looks like anywhere else. It treats a function like a lineage of DNA.
+      But in 1973, when Fischer Black and Myron Scholes set out to solve the option pricing problem, financial mathematics ran headfirst into a wall.
+      Finance doesn't like smooth curves. Finance likes boundaries.
+    instruct: "Measured, transition to conflict"
+    manim_class: "TaylorApproximation"
+    source: "scenes.py"
+
+  - id: "financial_kink"
+    type: animation
+    voiceover: >
+      Look at this payoff. This is a European Call Option at expiration. If the stock price stays below the strike price, the option is worth exactly zero. The moment it crosses that threshold, it gains value dollar-for-dollar.
+      Mathematically, this point right here—the strike price—is a catastrophe. It is a sharp, non-differentiable corner. A kink.
+      If you try to run a Taylor Series at this exact corner, the math shatters. The first derivative jumps instantly from zero to one. The second derivative—what quants call Gamma—explodes into infinity.
+      For decades, numerical finance had to work around this kink. We built rigid grids, sliced time into thousands of steps, and ran heavy Monte Carlo simulations, consuming massive computational power just to smooth out these corners.
+      But what if we didn't have to build a grid? What if we could use an entirely different kind of mathematical engine? One that doesn't look at a single point's derivatives, but instead molds itself to the entire space all at once.
+      Today, we build our very first Scientific Machine Learning model. We are going to see exactly how a neural network leverages the Universal Approximation Theorem to learn the Black-Scholes surface—kinks, corners, and all—from scratch.
+    instruct: "Slightly faster, highlighting the conflict, then lower pitch signaling paradigm shift"
+    manim_class: "OpeningPayoff"
+    source: "scenes.py"
+
+  - id: "option_surface_3d"
+    type: animation
+    voiceover: >
+      To understand how a neural network solves this, we have to stop looking at flat 2D payoff charts and step into the third dimension. This is the Option Surface.
+      At the very end of time—when time to maturity equals zero—the option value must equal that sharp hockey stick. But watch what happens as we move backward in time.
+      The moment you add even a fraction of a second of time, uncertainty enters the room. Volatility blurs the corner. The sharp kink melts into a smooth curve. This entire 3D landscape is governed by the Black-Scholes formula.
+      Now, let’s bring in our neural network.
+    instruct: "Instructional and geometric"
+    manim_class: "OptionSurfaceWarp"
+    source: "scenes.py"
+
+  - id: "elastic_sheet"
+    type: animation
+    voiceover: >
+      Before training, a neural network is nothing more than a random guess.
+      In traditional machine learning, we treat this network as a black box. But geometrically, this network is an elastic sheet. The weights control the slope of the sheet; the biases control where it folds.
+      According to the Universal Approximation Theorem, if our network has enough hidden units and a non-linear activation function, it can deform, stretch, and bend itself to match any continuous surface to arbitrary precision.
+    instruct: "Instructional, building concept"
+    manim_class: "NeuralApproximator"
+    source: "scenes.py"
+
+  - id: "training_network"
+    type: animation
+    voiceover: >
+      Watch what happens during training. The optimization algorithm pulls and pins the edges of our orange sheet to the boundary conditions, and then smooths out the center until the orange sheet perfectly blankets the true financial surface.
+    instruct: "Enthusiastic, demonstrating morphing"
+    manim_class: "NeuralApproximator"
+    source: "scenes.py"
+
+  - id: "structural_blueprint"
+    type: animation
+    voiceover: >
+      Before we write a single line of Python, let’s lay out our structural blueprint. We aren’t building a generic model to predict stock prices tomorrow. We are building a functional engine.
+      Our input vector has two continuous dimensions: the current Stock Price S, and the remaining Time to Maturity t. These two numbers flow into a Multi-Layer Perceptron.
+      Inside the hidden layers, the network calculates combinations of these variables and passes them through an activation function. For SciML, our choice of activation function is critical.
+      If we use a standard neural network activation like ReLU, our surface will be made of flat, jagged facets. The first derivative will be choppy, and the second derivative—our Gamma—will be zero everywhere.
+      To preserve the laws of financial derivatives, we must use a smooth activation function like tanh or SiLU. This ensures that our learned surface is infinitely differentiable, allowing us to compute exact market Greeks later on.
+      Now, let’s jump into Google Colab and engineer this engine from scratch.
+    instruct: "Conversational, whiteboard explanation"
+    manim_class: "ArchitectureWhiteboard"
+    source: "scenes.py"
+
+  - id: "engineering_pipeline"
+    type: code
+    voiceover: >
+      First, we need an Oracle—a source of ground truth to train our elastic sheet. We'll generate a synthetic market of ten thousand option prices using the exact Black-Scholes analytical formula.
+      Next, we design the continuous neural surface. Notice our architecture. We stack linear layers, but in between each one, we specifically call nn.Tanh(). This is what guarantees our surface remains smooth and continuous.
+      Finally, we set up our engineering pipeline. We pass our stock prices and times into the network, calculate the Mean Squared Error against our Oracle, and let the Adam optimizer update the weights.
+      Let's run the training loop and watch the function space map itself out.
+    instruct: "Instructional, guiding logic"
+    code_file: "code/neural_taylor.py"
+    code_range: [50, 66]
+    highlights:
+      - lines: [54, 55]
+        pause: 2.0
+      - lines: [56]
+        pause: 2.0
+      - lines: [57, 60]
+        pause: 2.0
+
+  - id: "results_and_challenge"
+    type: artifact
+    voiceover: >
+      Let’s look at our results.
+      Look at how cleanly the curves align. The orange neural network has tracked the true analytical solution perfectly, completely ignoring the challenge that the zero-boundary kink usually poses to traditional mathematical methods.
+      But this brings up our ultimate challenge.
+      We chose the Tanh activation function because it is smooth and infinitely differentiable. What happens if we look underneath the hood at the derivatives? What if we calculate Gamma—the second derivative of our option price with respect to the stock price?
+    instruct: "Satisfied, conclusive, then shifting to a challenge"
+    artifact_path: "media/validation_check.png"
+    animation: "fade_in"

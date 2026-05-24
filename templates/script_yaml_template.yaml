@@ -1,0 +1,90 @@
+# YAML SCRIPT GENERATION TEMPLATE
+# INSTRUCTIONS FOR AI MODEL:
+# This template is the machine-readable "shot list" companion to the voiceover.md script.
+# Every scene defined in voiceover.md must have a corresponding entry here, matching the scene ID exactly.
+# This file controls the pipeline for audio generation, Manim rendering, and final video assembly.
+
+module: "module_name_or_number"
+title: "Video Title"
+resolution: "1920x1080"
+fps: 30
+
+# Background music is optional. Set to an empty string or remove if not needed.
+music:
+  file: "media/audio/background.mp3"
+  volume: 0.1  # Relative volume (0.0 to 1.0)
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Professional, educational, measured pace."
+
+scenes:
+  # ---------------------------------------------------------
+  # SCENE TYPE: animation (Pure Manim Scene)
+  # ---------------------------------------------------------
+  - id: "scene_1_intro"          # MUST match the ID in voiceover.md
+    type: animation              # Scene type identifier
+    voiceover: >                 # The EXACT spoken text to be synthesized
+      Welcome to the module. Today we explore complex concepts.
+    instruct: "Enthusiastic and engaging."  # Emotion passed to TTS
+    manim_class: "Scene1_Intro"  # The name of the Python class in the source file
+    source: "scenes.py"          # The Python file containing the Manim class
+
+  # ---------------------------------------------------------
+  # SCENE TYPE: equation (LaTeX/MathTex Display)
+  # ---------------------------------------------------------
+  - id: "scene_2_equation"
+    type: equation
+    voiceover: >
+      This equation represents the core principle. Notice the second term.
+    instruct: "Deliberate and instructive."
+    equations:
+      - latex: "\\frac{\\partial V}{\\partial t} + \\frac{1}{2}\\sigma^2 S^2 \\frac{\\partial^2 V}{\\partial S^2} = 0"
+        highlight_terms: [2]     # 0-indexed terms to highlight sequentially (e.g., the second term)
+
+  # ---------------------------------------------------------
+  # SCENE TYPE: code (Syntax-Highlighted Code Display)
+  # ---------------------------------------------------------
+  - id: "scene_3_code"
+    type: code
+    voiceover: >
+      Let's look at the implementation. First, we define the parameters, 
+      then we set up the model.
+    instruct: "Technical but clear."
+    code_file: "code/demo.py"    # Path to the actual Python code file
+    code_range: [10, 25]         # The start and end line numbers to display
+    highlights:                  # Block reveals of code lines in sync with voiceover
+      - lines: [12, 14]          # Lines to highlight first
+        pause: 2.0               # Seconds to pause after highlighting before moving on
+      - lines: [20, 25]          # Lines to highlight next
+        pause: 1.5
+
+  # ---------------------------------------------------------
+  # SCENE TYPE: split (Dual-Pane Layout)
+  # ---------------------------------------------------------
+  - id: "scene_4_split"
+    type: split
+    voiceover: >
+      On the left, we have our training loop. On the right, you can see 
+      the model learning the surface in real time.
+    instruct: "Guiding attention."
+    layout: "code_left_anim_right" # Flexible layout specification (e.g., code_left_anim_right, anim_left_code_right)
+    left:
+      content: code
+      code_file: "code/demo.py"
+      code_range: [50, 60]
+    right:
+      content: animation
+      manim_class: "Scene4_TrainingAnim"
+      source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE TYPE: artifact (Static Image/Plot Embed)
+  # ---------------------------------------------------------
+  - id: "scene_5_artifact"
+    type: artifact
+    voiceover: >
+      As you can see from the validation plot, the results match perfectly.
+    instruct: "Confident and concluding."
+    artifact_path: "media/validation_plot.png" # Path to the pre-rendered image
+    animation: "fade_in"         # How the artifact should appear (e.g., fade_in, wipe)

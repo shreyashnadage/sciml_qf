@@ -71,16 +71,16 @@ class Scene2_FeynmanKacPaths(ThreeDScene):
         # point in the universe, what if we just drop a single particle and watch where it goes?
         
         # Simulate a 3D random walk (Brownian Motion Path)
-        path = VMobject()
-        path.set_points_as_corners([axes.c2p(0, 0, 0), axes.c2p(0, 0, 0)])
-        path.set_color(C_PATH)
+        path_points = [axes.c2p(0,0,0)]
+        curr = np.array([0.0, 0.0, 0.0])
+        for _ in range(50):
+            curr += np.array([np.random.normal(0, 0.2), np.random.normal(0, 0.2), 0.1])
+            path_points.append(axes.c2p(*curr))
+            
+        path = VMobject(color=C_PATH)
+        path.set_points_as_corners(path_points)
         
-        def update_path(p, dt):
-            last_point = p.get_points()[-1]
-            new_point = last_point + np.array([np.random.normal(0, 0.2), np.random.normal(0, 0.2), 0.1])
-            p.add_line_to(new_point)
-
-        self.play(UpdateFromFunc(path, update_path), run_time=3)
+        self.play(Create(path), run_time=3)
         
         # [VOICEOVER]: By simulating thousands of random market paths going forward in time, 
         # we only explore the areas of the universe that are actually statistically probable. 
@@ -90,7 +90,7 @@ class Scene2_FeynmanKacPaths(ThreeDScene):
             ParametricFunction(
                 lambda t: axes.c2p(t * np.cos(t * np.random.uniform(1,3)), t * np.sin(t * np.random.uniform(1,3)), t),
                 t_range=[0, 3], color=C_PATH, stroke_opacity=0.3
-            ) for _ in range(20)
+            ) for _ in range(10)
         ])
         
         self.play(FadeIn(paths, lag_ratio=0.1))
