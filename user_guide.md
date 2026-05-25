@@ -230,11 +230,12 @@ env\python.exe pipeline\director.py <module_directory> [flags]
 
 ### Supported Flags
 *   `module_dir` (Positional, Required): Path to the module folder, e.g. `01_neural_taylor_series`.
-*   `--phase` (Optional, Choices: `audio`, `render`, `stitch`, `all`):
+*   `--phase` (Optional, Choices: `audio`, `render`, `video`, `stitch`, `all`):
     *   `audio`: Pre-generate the voiceovers using local Qwen3-TTS.
-    *   `render`: Render individual scene videos using Manim.
+    *   `render`: Render individual scene videos using Manim (with actual voiceovers).
+    *   `video`: Render individual scene videos with dummy/silent audio (no TTS generation required, fast visual preview).
     *   `stitch`: Compile all generated scene clips into a single final video.
-    *   `all` (Default): Executes all three phases sequentially.
+    *   `all` (Default): Executes all three phases (audio, render, stitch) sequentially.
 *   `--quality` (Optional, Choices: `l`, `m`, `h`, `k`):
     *   `l` (Low preview: 480p, 15fps) - **Recommended for rapid iteration and testing.**
     *   `m` (Medium: 720p, 30fps).
@@ -249,20 +250,26 @@ Run the entire pipeline at a low-quality setting to inspect timings, text format
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase all --quality l
 ```
 
-**2. Voiceover Only**
+**2. Video Visual Preview Only (No TTS Audio Generation)**
+Render visuals using silent dummy audio to inspect animations quickly without triggering speech synthesis:
+```powershell
+env\python.exe pipeline\director.py 01_neural_taylor_series --phase video --quality l
+```
+
+**3. Voiceover Only**
 If you want to review or tweak synthesized speech audio first:
 ```powershell
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase audio
 ```
 
-**3. Render and Stitch Preview**
+**4. Render and Stitch Preview**
 If you've already generated audio and only modified code files or templates:
 ```powershell
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase render --quality l
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase stitch --quality l
 ```
 
-**4. Production Export**
+**5. Production Export**
 Compile the absolute final video in full HD:
 ```powershell
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase all --quality h
@@ -272,8 +279,11 @@ env\python.exe pipeline\director.py 01_neural_taylor_series --phase all --qualit
 
 ## 💡 6. Best Practices & Troubleshooting
 
+*   **Use Video Phase for Fast Visual Iteration**: Use `--phase video` during initial visual design stages. It runs Manim using silent dummy audio, skipping TTS, which saves time and avoids generating redundant audio files.
 *   **Use Low Quality `l` for Drafts**: Don't waste compute rendering 1080p60 on early drafts. Check your layout, subtitle text, and line numbers at 480p15 first.
 *   **Use Precise Highlights**: When displaying code using the `code` template, ensure `code_range` encompasses all the lines you intend to show, and keep `highlights` ranges strictly bounded relative to the whole file.
+*   **Audio Hashing and Caching**: The pipeline hashes the scene script text, speaker, and instructions to check if audio needs regeneration. Text is normalized to ignore whitespace and newline variations. If you change only formatting or whitespace in your YAML file, the cached audio will be reused automatically.
+*   **Organized Clips Directory**: Individual scene videos are copied and renamed to `<module_dir>/media/scene_clips/` before stitching. This keeps individual raw Manim renders separate from your modular scene-specific cuts.
 *   **TTS Fallbacks**: If you run into memory pressure issues on local dev rigs, the TTS engine automatically falls back to CPU generation. It takes a little longer but guarantees rendering stability.
 *   **Pre-generating Audio**: The voiceover audio is stored in `<module_dir>/media/voiceovers/`. If you alter script text, delete or overwrite the corresponding audio file or rerun `--phase audio` so the system regenerates it.
 *   **Windows SoX Errors**: If you encounter errors about `sox` not being recognized, verify that SoX is installed at `C:\Program Files (x86)\sox-14-4-2` or update the path on line 121 of `pipeline/director.py`.

@@ -46,6 +46,36 @@ class QwenSpeechService(SpeechService):
             print(f"Cache hit: {mp3_full_path} already exists. Skipping TTS generation.")
             return {"original_audio": audio_path}
         
+        # Check if dummy audio is requested (e.g. for fast video-only render phase)
+        if os.environ.get("SCIML_DUMMY_AUDIO") == "1":
+            words = text.split()
+            word_count = len(words)
+            duration = max(word_count * 0.4, 1.0) # estimate 0.4 seconds per word, min 1s
+            print(f"Generating dummy (silent) audio of duration {duration:.2f}s for: {text[:30]}...")
+            
+            temp_wav = mp3_full_path.with_suffix(".wav")
+            # Generate silence using ffmpeg
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", "anullsrc=r=22050:cl=mono",
+                "-t", f"{duration:.3f}",
+                str(temp_wav)
+            ], capture_output=True)
+            
+            # Convert to mp3
+            subprocess.run([
+                "ffmpeg", "-y",
+                "-i", str(temp_wav),
+                str(mp3_full_path)
+            ], capture_output=True)
+            
+            if temp_wav.exists():
+                temp_wav.unlink()
+                
+            print(f"Successfully generated dummy audio at {mp3_full_path}")
+            return {"original_audio": audio_path}
+        
         # The 'instruct' parameter allows adding emotions/styles
         instruct = kwargs.get("instruct", "Professional and clear educational tone.")
         

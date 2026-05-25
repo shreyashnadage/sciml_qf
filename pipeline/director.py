@@ -44,7 +44,7 @@ def mux_audio_to_video(video_path, audio_path):
 def parse_args():
     parser = argparse.ArgumentParser(description="SciML QF Video Director")
     parser.add_argument("module_dir", help="Path to the module directory (e.g. 02_physics_of_no_arbitrage)")
-    parser.add_argument("--phase", choices=["audio", "render", "stitch", "all"], default="all")
+    parser.add_argument("--phase", choices=["audio", "render", "video", "stitch", "all"], default="all")
     parser.add_argument("--quality", choices=["l", "m", "h", "k"], default="l", help="Manim quality flag")
     parser.add_argument("--scene", default=None, help="Only process this specific scene ID")
     return parser.parse_args()
@@ -73,8 +73,11 @@ def get_audio_filename(scene, script):
     default_instruct = voice_config.get("default_instruct", "Professional, educational, measured pace.").strip()
     instruct = scene.get("instruct", default_instruct).strip()
     
+    # Normalize text representation to ignore whitespace/newline differences
+    normalized_text = " ".join(text.split())
+    
     # Create unique string representation for hashing
-    hash_payload = f"text:{text}|speaker:{speaker}|instruct:{instruct}"
+    hash_payload = f"text:{normalized_text}|speaker:{speaker}|instruct:{instruct}"
     hash_digest = hashlib.md5(hash_payload.encode('utf-8')).hexdigest()
     
     return f"{scene_id}_{hash_digest}.mp3"
@@ -125,12 +128,13 @@ def generate_audio(script, module_dir, scene_id=None):
         
         archive_old_audio_files(media_dir, scene["id"], audio_name)
         
-        text = scene.get("voiceover")
+        text = scene.get("voiceover", "")
+        normalized_text = " ".join(text.split())
         default_instruct = voice_config.get("default_instruct", "Professional, educational, measured pace.")
         instruct = scene.get("instruct", default_instruct)
         
         try:
-            service.generate_from_text(text, path=audio_name, instruct=instruct)
+            service.generate_from_text(normalized_text, path=audio_name, instruct=instruct)
             # Add the generated audio path to the scene config for rendering
             scene["audio_path"] = str(media_dir / audio_name)
             print(f"[{current_count}/{total_audio}] Completed voiceover for scene '{scene['id']}'")
@@ -240,8 +244,12 @@ def render_scenes(script, module_dir, quality, scene_id=None):
                 rendered_video = matches[0]
                 
         if rendered_video:
-            # Create a scene-specific copy of the video
-            scene_specific_video = rendered_video.with_name(f"{scene['id']}.mp4")
+            # CREATE NEW DIRECTORY: Save the renamed copy to a dedicated clips folder
+            clips_dir = Path(module_dir).resolve() / "media" / "scene_clips"
+            clips_dir.mkdir(parents=True, exist_ok=True)
+            
+            scene_specific_video = clips_dir / f"{scene['id']}.mp4"
+            
             try:
                 shutil.copy(str(rendered_video), str(scene_specific_video))
                 rendered_video = scene_specific_video
@@ -257,14 +265,10 @@ def stitch_video(script, module_dir, quality):
     print("=== PHASE 3: STITCHING VIDEO ===")
     
     q_map = {"l": "480p15", "m": "720p30", "h": "1080p60", "k": "2160p60"}
-    # Note: If -qh is used, Manim defaults to 1080p60 for some configs, but usually 1080p60. 
-    # Let's check what Manim's actual output folder is based on quality.
-    # We will search the media/videos/ directory.
-    # Actually, Manim creates folder names like `source_file_name/quality`.
     
     videos_dir = Path(module_dir).resolve() / "media" / "videos"
+    clips_dir = Path(module_dir).resolve() / "media" / "scene_clips"
     
-    # We need to find the final MP4 for each scene.
     video_files = []
     
     for scene in script.get("scenes", []):
@@ -276,19 +280,16 @@ def stitch_video(script, module_dir, quality):
             source_name = f"{scene_type}_scene"
             manim_class = f"{scene_type.capitalize()}Scene"
             
-        # We look into videos_dir / source_name / q_map[quality] / {manim_class}.mp4
-        # Since Manim output folder structure can be slightly unpredictable with templates, 
-        # let's just search for {manim_class}.mp4 in the videos_dir.
         found = False
-        # First try to find the scene-specific video
-        for p in videos_dir.rglob(f"{scene['id']}.mp4"):
-            if q_map[quality] in str(p):
-                video_files.append(p)
-                found = True
-                break
+        
+        # 1. First try to find the scene-specific video in the NEW directory
+        for p in clips_dir.rglob(f"{scene['id']}.mp4"):
+            video_files.append(p)
+            found = True
+            break
                 
         if not found:
-            # Fallback to class name search
+            # 2. Fallback to raw class name search in the ORIGINAL directory
             for p in videos_dir.rglob(f"{manim_class}.mp4"):
                 if q_map[quality] in str(p):
                     video_files.append(p)
@@ -384,10 +385,13 @@ def main():
     module_dir = args.module_dir
     script = load_script(module_dir)
     
+    if args.phase == "video":
+        os.environ["SCIML_DUMMY_AUDIO"] = "1"
+    
     if args.phase in ["audio", "all"]:
         generate_audio(script, module_dir, args.scene)
         
-    if args.phase in ["render", "all"]:
+    if args.phase in ["render", "video", "all"]:
         render_scenes(script, module_dir, args.quality, args.scene)
         
     if args.phase in ["stitch", "all"]:

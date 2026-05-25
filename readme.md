@@ -102,4 +102,10 @@ You can also run the pipeline directly via terminal command line:
 ```powershell
 env\python.exe pipeline\director.py 01_neural_taylor_series --phase all --quality l
 ```
-See the [User Guide](file:///d:/SCIML_QF/user_guide.md) for more comprehensive configuration options, CLI flags, and video design specifications.
+
+*   **Tip (Visual-Only Preview):** Use `--phase video` to render the visuals using silent dummy audio, skipping TTS audio synthesis to inspect animations quickly:
+    ```powershell
+    env\python.exe pipeline\director.py 01_neural_taylor_series --phase video --quality l
+    ```
+
+See the [User Guide](file:///d:/SCIML_QF/user_guide.md) for more comprehensive configuration options, CLI flags, caching behavior, and video design specifications.
