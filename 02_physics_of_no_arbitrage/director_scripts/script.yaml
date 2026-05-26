@@ -1,52 +1,107 @@
+# YAML SCRIPT GENERATION TEMPLATE
+# MODULE 2: THE PHYSICS OF NO-ARBITRAGE
+
 module: "02_physics_of_no_arbitrage"
 title: "The Physics of No-Arbitrage"
 resolution: "1920x1080"
 fps: 30
+
+music:
+  file: "media/audio/background.mp3"
+  volume: 0.1
 
 voice:
   speaker: "Ryan"
   default_instruct: "Professional, educational, measured pace."
 
 scenes:
-  - id: "intro_data_cloud"
+  # ---------------------------------------------------------
+  # SCENE 1: The Confession (Squishing the Sheet)
+  # ---------------------------------------------------------
+  - id: "scene_1_confession"
     type: animation
     voiceover: >
-      In our last video, we proved that a neural network can learn 
-      the exact shape of a financial derivative. But we cheated.
-    instruct: "Reflective, setting up a confession."
-    manim_class: "Scene1_EmptyRoom"
+      In the last module, we proved our neural network could map the option surface. 
+      But we cheated. We used an analytical formula to give the network the exact answers. 
+      Without that data, the network is blind. It sits in an empty room. It can squish, stretch, and bend... 
+      but it has no idea which surface to fit. We have to teach it using only the laws of physics.
+    instruct: "Measured, setting up the central conflict."
+    manim_class: "EmptyRoom"
     source: "scenes.py"
-    
-  - id: "pde_reveal"
-    type: equation
+
+  # ---------------------------------------------------------
+  # SCENE 2: The Melting Surface (2D to 3D)
+  # ---------------------------------------------------------
+  - id: "scene_2_melting"
+    type: animation
     voiceover: >
-      The answer lies in treating financial mathematics not as a 
-      statistical spreadsheet, but as the laws of physics.
-    instruct: "Deliberate, reverent."
-    equations:
-      - latex: "\\frac{\\partial V}{\\partial t} + \\frac{1}{2}\\sigma^2 S^2 \\frac{\\partial^2 V}{\\partial S^2} + rS \\frac{\\partial V}{\\partial S} - rV = 0"
-        highlight_terms: [2]
-    
-  - id: "code_walkthrough_domain"
-    type: code
+      Let us start at maturity, where time T equals zero. The payoff of our Call option is exactly known. It is this sharp hockey stick. 
+      But what happens when we add time? 
+      As time to maturity increases, there is more uncertainty. We are unsure if the option will finish in the money. 
+      This uncertainty melts the sharp reality of expiration into a smooth, curved surface. The uncertainty vanishes only when we reach maturity.
+    instruct: "Descriptive, guiding the visual transition from 2D to 3D."
+    manim_class: "TimeExpansion"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 3: The PDE Scale
+  # ---------------------------------------------------------
+  - id: "scene_3_pde_scale"
+    type: animation
     voiceover: >
-      Welcome back to Colab. Notice we are not importing any analytical 
-      Black-Scholes formulas. Instead of data, we need to give the network 
-      a space to explore.
-    instruct: "Guiding, technical but accessible."
+      This smooth surface is governed by the Black Scholes partial differential equation. 
+      If we zoom into any arbitrary point, we can extract three vectors. Theta, the time decay. Delta, the directional drift. And Gamma, the diffusion. 
+      For the market to be free of arbitrage, these physical forces must balance. 
+      If we stack them on a scale, they must perfectly offset the risk free discount vector on the right. This equilibrium is our physics loss.
+    instruct: "Analytical and emphasizing the equilibrium."
+    manim_class: "PDEScale"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 4: The Hinge (ReLU vs Tanh)
+  # ---------------------------------------------------------
+  - id: "scene_4_activations"
+    type: animation
+    voiceover: >
+      To calculate those vectors, we need smooth derivatives. 
+      If we build a simple model using a Re L U activation function, the resulting prediction will always have a kink. 
+      If we roll a point across it, the tangent line snaps. It does not have a single, unique value at the kink, making it impossible to calculate our Greeks. 
+      But if we replace Re L U with Tan H, the surface becomes smooth. The tangent has a unique value everywhere, allowing us to extract perfect derivatives.
+    instruct: "Instructive, highlighting the mathematical failure of ReLU."
+    manim_class: "Activations"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 5: Code Walkthrough
+  # ---------------------------------------------------------
+  - id: "scene_5_code"
+    type: animation
+    manim_class: "CodeWalkthroughScene"
+    source: "scenes.py"
+    voiceover: >
+      Let us look at the Python script. First... the empty room. We scatter random coordinate points across space and time. 
+      Next... the physics loss. We ask the network for a prediction, then extract the Delta and Gamma directly from the network weights using PyTorch. 
+      Finally... we plug those derivatives into our P D E scale. We penalize the network until that scale balances to zero.
+    instruct: "Technical but clear and guiding."
     code_file: "code/pinn_black_scholes.py"
-    code_range: [26, 43]
+    code_range: [50, 75]
     highlights:
-      - lines: [32, 33]
-        pause: 2
-      - lines: [42]
-        pause: 1.5
-    
-  - id: "training_output"
-    type: artifact
+      - lines: [53, 56]
+        pause: 2.0
+      - lines: [60, 68]
+        pause: 2.0
+      - lines: [71, 74]
+        pause: 2.0
+
+  # ---------------------------------------------------------
+  # SCENE 6: Plotly Artifact
+  # ---------------------------------------------------------
+  - id: "scene_6_artifact"
+    type: animation
+    manim_class: "PINNDiscoveryScene"
+    source: "scenes.py"
     voiceover: >
-      The loss drops. The network is learning the geometry of the 
-      market purely by staring at the PDE.
-    instruct: "Triumphant, amazed."
-    artifact_path: "media/pinn_validation.png"
-    animation: "fade_in"
+      Let us run the optimizer. Starting from our flat orange sheet, the invisible forces of the P D E push and pull the neural network. 
+      It discovers the exact option surface without a single piece of training data. 
+      Here is your challenge. Open the script, change the boundary condition to a Put option, and watch the physics engine grow an entirely different shape.
+    instruct: "Satisfied, conclusive, and challenging."

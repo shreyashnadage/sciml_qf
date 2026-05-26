@@ -81,14 +81,22 @@ class SciMLThreeDScene(ThreeDScene, VoiceoverScene):
 class ObjectiveHook(SciMLThreeDScene):
     def construct(self):
         # 3D Option Surface (Rotating in background)
-        axes = ThreeDAxes(x_range=[50, 150, 20], y_range=[0, 1, 0.2], z_range=[0, 60, 20])
+        axes = ThreeDAxes(
+            x_range=[50, 150, 20], y_range=[0, 1, 0.2], z_range=[0, 60, 20],
+            axis_config={"include_numbers": True}
+        )
+        labels = axes.get_axis_labels(x_label="S", y_label="t", z_label="V")
+        
         surface = Surface(
             lambda s, t: axes.c2p(s, t, black_scholes_call(s, 100, t, 0.2, 0.05)),
             u_range=[50, 150], v_range=[0.01, 1], fill_opacity=0.3, checkerboard_colors=[BLUE_D, BLUE_E]
         ).shift(RIGHT * 3)
         
+        axes.shift(RIGHT * 3)
+        labels.shift(RIGHT * 3)
+        
         self.set_camera_orientation(phi=70 * DEGREES, theta=-45 * DEGREES)
-        self.add(surface)
+        self.add(axes, labels, surface)
         self.begin_ambient_camera_rotation(rate=0.1)
 
         # BS Formula (Fixed in frame)
@@ -97,14 +105,36 @@ class ObjectiveHook(SciMLThreeDScene):
         ).to_edge(LEFT).shift(UP)
         self.add_fixed_in_frame_mobjects(bs_formula)
 
-        # Blank Neural Network Architecture
-        nn_group = VGroup(
-            Circle(radius=0.3, color=WHITE, fill_opacity=0.2),
-            Circle(radius=0.3, color=WHITE, fill_opacity=0.2),
-            Circle(radius=0.3, color=WHITE, fill_opacity=0.2)
-        ).arrange(DOWN, buff=0.5).to_edge(LEFT).shift(DOWN)
+        # Neural Network Architecture shown as Code
+        nn_code = """class OptionSurfaceNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.sheet = nn.Sequential(
+            nn.Linear(2, 64),
+            nn.Tanh(),
+            nn.Linear(64, 64),
+            nn.Tanh(),
+            nn.Linear(64, 1)
+        )"""
+        temp_code_dir = Path("media")
+        temp_code_dir.mkdir(parents=True, exist_ok=True)
+        nn_temp_file_path = temp_code_dir / "nn_architecture.py"
+        cleaned_lines = []
+        for line in nn_code.splitlines():
+            if line.strip() == "":
+                cleaned_lines.append(" \n")
+            else:
+                cleaned_lines.append(line.replace("\t", "    ") + "\n")
+        with open(nn_temp_file_path, "w") as f:
+            f.writelines(cleaned_lines)
+
+        nn_group = Code(
+            code_file=str(nn_temp_file_path),
+            language="python",
+            background="window"
+        )
+        nn_group.scale(0.55).to_edge(LEFT).shift(DOWN).shift(LEFT * 10) # Hide off-screen initially
         self.add_fixed_in_frame_mobjects(nn_group)
-        nn_group.set_opacity(0)
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             self.play(Write(bs_formula), run_time=tracker.duration * 0.2)
@@ -113,9 +143,9 @@ class ObjectiveHook(SciMLThreeDScene):
             # Formula dissolves into dust (Scale up and fade out)
             self.play(bs_formula.animate.scale(1.5).set_opacity(0), run_time=tracker.duration * 0.2)
             
-            # NN Fades in and pulses
-            self.play(nn_group.animate.set_opacity(1), run_time=tracker.duration * 0.2)
-            self.play(Indicate(nn_group, color=ORANGE, scale_factor=1.2), run_time=tracker.duration * 0.2)
+            # Neural Architecture code slides in
+            self.play(nn_group.animate.shift(RIGHT * 10), run_time=tracker.duration * 0.2)
+            self.play(Indicate(nn_group, color=ORANGE, scale_factor=1.05), run_time=tracker.duration * 0.2)
 
         self.stop_ambient_camera_rotation()
 
@@ -173,7 +203,6 @@ class TaylorWrap(SciMLScene):
 
 class TangentPanic(MovingCameraScene, VoiceoverScene):
     def setup(self):
-        # Explicit setup for VoiceoverScene combined with MovingCameraScene
         config_path = os.environ.get("SCENE_CONFIG_PATH")
         if not config_path or not os.path.exists(config_path):
             self.scene_config = {
@@ -198,7 +227,15 @@ class TangentPanic(MovingCameraScene, VoiceoverScene):
 
     def construct(self):
         K = 100
-        axes = Axes(x_range=[80, 120, 10], y_range=[0, 20, 5], x_length=8, y_length=5)
+        title = Text("The Kink: Non-Differentiable Point", font_size=32).to_edge(UP)
+        
+        axes = Axes(
+            x_range=[80, 120, 10], y_range=[0, 20, 5], 
+            x_length=8, y_length=5,
+            axis_config={"include_numbers": True}
+        ).shift(DOWN * 0.5)
+        
+        axes_labels = axes.get_axis_labels(x_label="Stock Price", y_label="Payoff")
         
         # Hockey Stick Payoff
         payoff = axes.plot(lambda x: max(x - K, 0), color=BLUE)
@@ -218,7 +255,7 @@ class TangentPanic(MovingCameraScene, VoiceoverScene):
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             d = tracker.duration
-            self.play(Create(axes), Create(payoff), run_time=d * 0.2)
+            self.play(Write(title), Create(axes), Write(axes_labels), Create(payoff), run_time=d * 0.2)
             
             # Camera aggressively zooms in on the kink
             self.play(
@@ -243,14 +280,20 @@ class MeltingSurface(SciMLThreeDScene):
     def construct(self):
         axes = ThreeDAxes(
             x_range=[50, 150, 20], y_range=[0, 1, 0.2], z_range=[0, 60, 20],
-            x_length=7, y_length=7, z_length=4
+            x_length=7, y_length=7, z_length=4,
+            axis_config={"include_numbers": True}
         )
+        labels = axes.get_axis_labels(x_label="S", y_label="t", z_label="V")
+        
         self.set_camera_orientation(phi=0 * DEGREES, theta=-90 * DEGREES) # Start 2D Top-Down
         
         K = 100
-        # The 2D Hockey Stick at t=0
-        hockey_stick = axes.plot(lambda s: max(s - K, 0), color=BLUE).shift(OUT * axes.c2p(0,0,0)[2])
-        self.add(axes, hockey_stick)
+        # Correctly draw the Hockey Stick as a 3D parametric curve at t=0
+        hockey_stick = axes.plot_parametric_curve(
+            lambda s: axes.c2p(s, 0.01, max(s - K, 0)),
+            t_range=[50, 150], color=BLUE
+        )
+        self.add(axes, labels, hockey_stick)
 
         time_tracker = ValueTracker(0.01)
 
@@ -279,36 +322,46 @@ class MeltingSurface(SciMLThreeDScene):
 
 class ElasticSheet(SciMLThreeDScene):
     def construct(self):
-        axes = ThreeDAxes(x_range=[50, 150, 20], y_range=[0, 1, 0.2], z_range=[0, 60, 20])
-        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES)
+        axes = ThreeDAxes(
+            x_range=[50, 150, 20], y_range=[0, 1, 0.2], z_range=[0, 60, 20],
+            x_length=6, y_length=6, z_length=3.5,
+            axis_config={"include_numbers": True}
+        ).shift(DOWN * 0.5)
+        labels = axes.get_axis_labels(x_label="S", y_label="t", z_label="V")
+        
+        self.set_camera_orientation(phi=75 * DEGREES, theta=-45 * DEGREES, zoom=0.7)
         
         # True Surface
         true_surface = Surface(
             lambda s, t: axes.c2p(s, t, black_scholes_call(s, 100, t, 0.2, 0.05)),
             u_range=[50, 150], v_range=[0.01, 1], fill_opacity=0.3, color=BLUE
         )
-        self.add(axes, true_surface)
+        self.add(axes, labels, true_surface)
 
         # Legend
         legend_blue = Text("Blue Surface = True Math", font_size=24, color=BLUE).to_corner(UL)
         legend_orange = Text("Orange Sheet = Neural Network", font_size=24, color=ORANGE).next_to(legend_blue, DOWN, aligned_edge=LEFT)
-        self.add_fixed_in_frame_mobjects(legend_blue, legend_orange)
+        self.add_fixed_in_frame_mobjects(legend_blue)
+        
+        self.add_fixed_in_frame_mobjects(legend_orange)
+        legend_orange.set_opacity(0) # Hide initially
 
         # Flat Orange Grid hovering above
         flat_sheet = Surface(
             lambda s, t: axes.c2p(s, t, 45), # Hovering at Z=45
             u_range=[50, 150], v_range=[0, 1], fill_opacity=0.8, checkerboard_colors=[ORANGE, YELLOW]
         )
+        flat_sheet.shift(OUT * 3.5) # Shift out of view initially
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             self.play(Write(legend_blue), run_time=tracker.duration * 0.2)
             
             # Sheet drops down from above
-            flat_sheet.shift(OUT * 2)
+            self.play(FadeIn(flat_sheet), run_time=tracker.duration * 0.1)
             self.play(
-                flat_sheet.animate.shift(IN * 2), 
-                Write(legend_orange), 
-                run_time=tracker.duration * 0.6
+                flat_sheet.animate.shift(IN * 3.5), 
+                legend_orange.animate.set_opacity(1), 
+                run_time=tracker.duration * 0.5
             )
             self.wait(tracker.duration * 0.2)
 
@@ -328,7 +381,7 @@ class ArchitectureBlueprint(SciMLScene):
         label_vol = Text("Volatility", font_size=24, color=RED).next_to(node_vol, LEFT)
 
         # Central Box
-        sheet_box = RoundedRectangle(corner_radius=0.2, height=3, width=4, color=ORANGE).shift(RIGHT * 2)
+        sheet_box = RoundedRectangle(corner_radius=0.2, height=3, width=4, color=ORANGE).shift(RIGHT * 1)
         sheet_label = Text("Neural Sheet", font_size=32).move_to(sheet_box)
 
         # Connections
@@ -337,16 +390,24 @@ class ArchitectureBlueprint(SciMLScene):
             Line(node_t.get_right(), sheet_box.get_left(), color=WHITE),
             Line(node_vol.get_right(), sheet_box.get_left() + DOWN * 1, color=WHITE)
         )
+        
+        # Output Node
+        node_out = Circle(radius=0.5, color=BLUE, fill_opacity=0.2).shift(RIGHT * 5)
+        label_out = Text("Option Price (V)", font_size=24, color=BLUE).next_to(node_out, DOWN)
+        line_out = Arrow(sheet_box.get_right(), node_out.get_left(), color=WHITE)
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             d = tracker.duration
             self.play(FadeIn(node_s, label_s, node_t, label_t), run_time=d * 0.2)
-            self.play(Create(sheet_box), Write(sheet_label), run_time=d * 0.2)
+            self.play(Create(sheet_box), Write(sheet_label), run_time=d * 0.15)
             self.play(Create(lines[0:2]), run_time=d * 0.1)
             
             # Explicitly highlight volatility (The Heat)
-            self.play(FadeIn(node_vol, label_vol), Create(lines[2]), run_time=d * 0.2)
-            self.play(Indicate(node_vol, color=YELLOW, scale_factor=1.3), run_time=d * 0.2)
+            self.play(FadeIn(node_vol, label_vol), Create(lines[2]), run_time=d * 0.15)
+            self.play(Indicate(node_vol, color=YELLOW, scale_factor=1.3), run_time=d * 0.15)
+            
+            # Show output
+            self.play(FadeIn(node_out, label_out), Create(line_out), run_time=d * 0.15)
             self.wait(d * 0.1)
 
 
@@ -356,29 +417,34 @@ class HingeDemonstration(SciMLScene):
     def construct(self):
         axes = Axes(x_range=[-3, 3, 1], y_range=[-1, 3, 1], x_length=6, y_length=4)
         
+        title = Text("Activation Functions: The Hinges", font_size=32).to_edge(UP)
+        subtitle = Text("Linear (Flat Sheet)", font_size=24, color=ORANGE).next_to(title, DOWN)
+        
         # Flat line (the stiff board)
         flat_line = axes.plot(lambda x: 0, color=ORANGE, stroke_width=8)
         
         # ReLU Fold (Harsh, jagged crease)
-        relu_fold = axes.plot(lambda x: max(x, 0), color=ORANGE, stroke_width=8)
-        cross = Cross(scale_factor=0.5).next_to(axes.c2p(0, 0), UP, buff=0.5)
+        relu_fold = axes.plot(lambda x: max(x, 0), color=RED, stroke_width=8)
+        relu_label = Text("ReLU: Harsh, Jagged Fold", font_size=24, color=RED).next_to(title, DOWN)
+        cross = Text("✗", color=RED).scale(2).next_to(axes.c2p(0, 0), DOWN, buff=0.5)
         
         # Tanh Fold (Smooth bending metal)
-        tanh_fold = axes.plot(lambda x: np.tanh(x) + 1, color=ORANGE, stroke_width=8) # Offset for visibility
-        check = MathTex(r"\checkmark", color=GREEN).scale(2).next_to(axes.c2p(0, 1), UP, buff=0.5)
+        tanh_fold = axes.plot(lambda x: np.tanh(x) + 1, color=GREEN, stroke_width=8)
+        tanh_label = Text("Tanh: Smooth Bend", font_size=24, color=GREEN).next_to(title, DOWN)
+        check = Text("✓", color=GREEN).scale(2).next_to(axes.c2p(0, 1), UP, buff=0.5)
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             d = tracker.duration
-            self.play(Create(axes), Create(flat_line), run_time=d * 0.1)
+            self.play(Write(title), Write(subtitle), Create(axes), Create(flat_line), run_time=d * 0.15)
             
             # Show ReLU harsh fold
-            self.play(Transform(flat_line, relu_fold), run_time=d * 0.2)
+            self.play(Transform(flat_line, relu_fold), Transform(subtitle, relu_label), run_time=d * 0.25)
             self.play(Create(cross), run_time=d * 0.1)
             self.wait(d * 0.1)
             
             # Show Tanh smooth fold
-            self.play(FadeOut(cross), Transform(flat_line, tanh_fold), run_time=d * 0.3)
-            self.play(FadeIn(check), run_time=d * 0.1)
+            self.play(FadeOut(cross), Transform(flat_line, tanh_fold), Transform(subtitle, tanh_label), run_time=d * 0.25)
+            self.play(FadeIn(check), run_time=d * 0.05)
             self.wait(d * 0.1)
 
 

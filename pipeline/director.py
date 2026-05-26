@@ -20,6 +20,11 @@ def get_video_duration(path):
     except ValueError:
         return 0.0
 
+def has_audio_stream(path):
+    cmd = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "default=noprint_wrappers=1:nokey=1", str(path)]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
+    return "audio" in result.stdout.lower()
+
 def mux_audio_to_video(video_path, audio_path):
     print(f"    -> Multiplexing audio for {video_path.name}...")
     temp_video = video_path.with_name(f"temp_{video_path.name}")
@@ -361,23 +366,51 @@ def stitch_video(script, module_dir, quality):
         print(f"Final video stitched and saved to: {out_file}")
         
     else:
-        # Write ffmpeg concat file for standard cut
-        concat_file = Path(module_dir) / "media" / "manifest.txt"
-        with open(concat_file, "w") as f:
-            for vf in video_files:
-                path_str = str(vf).replace("\\", "/")
-                f.write(f"file '{path_str}'\n")
-                
-        # Call ffmpeg
-        cmd = [
-            "ffmpeg", "-y", "-f", "concat", "-safe", "0", 
-            "-i", str(concat_file), 
-            "-c", "copy", 
-            str(out_file)
-        ]
+        # Check if all files have an audio stream
+        all_have_audio = all(has_audio_stream(vf) for vf in video_files)
         
-        subprocess.run(cmd)
-        print(f"Final video stitched and saved to: {out_file}")
+        if all_have_audio:
+            print(f"Concatenating {len(video_files)} scenes using ffmpeg concat filter to ensure perfect audio-video sync...")
+            inputs = []
+            filter_complex_parts = []
+            for i, vf in enumerate(video_files):
+                inputs.extend(["-i", str(vf)])
+                filter_complex_parts.append(f"[{i}:v][{i}:a]")
+            
+            filter_complex = "".join(filter_complex_parts) + f"concat=n={len(video_files)}:v=1:a=1[v][a]"
+            
+            cmd = [
+                "ffmpeg", "-y",
+                *inputs,
+                "-filter_complex", filter_complex,
+                "-map", "[v]",
+                "-map", "[a]",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-c:a", "aac",
+                str(out_file)
+            ]
+            subprocess.run(cmd)
+            print(f"Final video stitched and saved to: {out_file}")
+        else:
+            print("Warning: Some scenes do not contain audio. Falling back to concat demuxer (may cause sync drift).")
+            # Write ffmpeg concat file for standard cut
+            concat_file = Path(module_dir) / "media" / "manifest.txt"
+            with open(concat_file, "w") as f:
+                for vf in video_files:
+                    path_str = str(vf).replace("\\", "/")
+                    f.write(f"file '{path_str}'\n")
+                    
+            # Call ffmpeg
+            cmd = [
+                "ffmpeg", "-y", "-f", "concat", "-safe", "0", 
+                "-i", str(concat_file), 
+                "-c", "copy", 
+                str(out_file)
+            ]
+            
+            subprocess.run(cmd)
+            print(f"Final video stitched and saved to: {out_file}")
 
 
 def main():
