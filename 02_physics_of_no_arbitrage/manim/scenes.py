@@ -170,7 +170,8 @@ class TimeExpansion(SciMLThreeDScene):
                 run_time=d * 0.4, 
                 rate_func=linear
             )
-            self.wait(d * 0.1)
+            # Step 4: Rotate camera to show the surface from behind
+            self.move_camera(phi=75 * DEGREES, theta=-135 * DEGREES, run_time=d * 0.1)
 
 
 # ---------------------------------------------------------
