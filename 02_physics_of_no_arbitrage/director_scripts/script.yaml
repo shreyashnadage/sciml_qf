@@ -37,23 +37,23 @@ scenes:
     voiceover: >
       Let us start at maturity, where time T equals zero. The payoff of our Call option is exactly known. It is this sharp hockey stick. 
       But what happens when we add time? 
-      As time to maturity increases, there is more uncertainty. We are unsure if the option will finish in the money. 
-      This uncertainty melts the sharp reality of expiration into a smooth, curved surface. The uncertainty vanishes only when we reach maturity.
+      As time to maturity increases, there is more uncertainty. We are more unsure of the final payoff. 
+      This uncertainty smooths out the sharp kink into a continuous curve representing the option value. The uncertainty vanishes only when we reach maturity, where we know the payoff exactly.
     instruct: "Descriptive, guiding the visual transition from 2D to 3D."
     manim_class: "TimeExpansion"
     source: "scenes.py"
 
   # ---------------------------------------------------------
-  # SCENE 3: The PDE Scale
+  # SCENE 3: The PDE Vectors Stacking
   # ---------------------------------------------------------
   - id: "scene_3_pde_scale"
     type: animation
     voiceover: >
       This smooth surface is governed by the Black Scholes partial differential equation. 
       If we zoom into any arbitrary point, we can extract three vectors. Theta, the time decay. Delta, the directional drift. And Gamma, the diffusion. 
-      For the market to be free of arbitrage, these physical forces must balance. 
-      If we stack them on a scale, they must perfectly offset the risk free discount vector on the right. This equilibrium is our physics loss.
-    instruct: "Analytical and emphasizing the equilibrium."
+      For the market to be free of arbitrage, these physical forces must balance perfectly. 
+      If we stack these three vectors together, they must exactly equal the risk free discount vector on the right. This equation is our physics loss.
+    instruct: "Analytical and emphasizing the vector equality."
     manim_class: "PDEScale"
     source: "scenes.py"
 
@@ -64,9 +64,9 @@ scenes:
     type: animation
     voiceover: >
       To calculate those vectors, we need smooth derivatives. 
-      If we build a simple model using a Re L U activation function, the resulting prediction will always have a kink. 
+      If we build a simple model using a ReLU activation function, the resulting prediction will always have a kink. 
       If we roll a point across it, the tangent line snaps. It does not have a single, unique value at the kink, making it impossible to calculate our Greeks. 
-      But if we replace Re L U with Tan H, the surface becomes smooth. The tangent has a unique value everywhere, allowing us to extract perfect derivatives.
+      But if we replace ReLU with Tan H, the surface becomes smooth. The tangent has a unique value everywhere, allowing us to extract perfect derivatives.
     instruct: "Instructive, highlighting the mathematical failure of ReLU."
     manim_class: "Activations"
     source: "scenes.py"
@@ -79,22 +79,22 @@ scenes:
     manim_class: "CodeWalkthroughScene"
     source: "scenes.py"
     voiceover: >
-      Let us look at the Python script. First... the empty room. We scatter random coordinate points across space and time. 
-      Next... the physics loss. We ask the network for a prediction, then extract the Delta and Gamma directly from the network weights using PyTorch. 
-      Finally... we plug those derivatives into our P D E scale. We penalize the network until that scale balances to zero.
+      Let us look at the Python script. First... we scatter random coordinate points across space and time. 
+      Next... we ask the network for a prediction, then extract the Delta and Gamma directly from the network weights using Py Torch. 
+      Finally... we plug those derivatives into our P D E equation. We penalize the network until the vectors balance perfectly.
     instruct: "Technical but clear and guiding."
     code_file: "code/pinn_black_scholes.py"
-    code_range: [50, 75]
+    code_range: [46, 100]
     highlights:
-      - lines: [53, 56]
-        pause: 2.0
-      - lines: [60, 68]
-        pause: 2.0
-      - lines: [71, 74]
-        pause: 2.0
+      - search_string: "def sample_domain"
+        lines_count: 10
+      - search_string: "V = model(S, t)"
+        lines_count: 15
+      - search_string: "pde_residual = dV_dt"
+        lines_count: 4
 
   # ---------------------------------------------------------
-  # SCENE 6: Plotly Artifact
+  # SCENE 6: PINN Discovery (Animation)
   # ---------------------------------------------------------
   - id: "scene_6_artifact"
     type: animation

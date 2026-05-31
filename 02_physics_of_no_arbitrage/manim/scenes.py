@@ -407,13 +407,13 @@ class CodeWalkthroughScene(SciMLScene):
         
         # Read the config values or use fallbacks
         code_file = self.scene_config.get("code_file", "code/pinn_black_scholes.py")
-        code_range = self.scene_config.get("code_range", [50, 75])
+        code_range = self.scene_config.get("code_range", [46, 100])
         highlights = self.scene_config.get("highlights", [
-            {"lines": [53, 56], "pause": 2.0},
-            {"lines": [60, 68], "pause": 2.0},
-            {"lines": [71, 74], "pause": 2.0}
+            {"search_string": "def sample_domain", "lines_count": 10},
+            {"search_string": "V = model(S, t)", "lines_count": 15},
+            {"search_string": "pde_residual = dV_dt", "lines_count": 4}
         ])
-        voiceover_text = self.scene_config.get("voiceover", "Let us look at the Python script. First... the empty room. We scatter random coordinate points across space and time. Next... the physics loss. We ask the network for a prediction, then extract the Delta and Gamma directly from the network weights using PyTorch. Finally... we plug those derivatives into our P D E scale. We penalize the network until that scale balances to zero.")
+        voiceover_text = self.scene_config.get("voiceover", "Let us look at the Python script. First... we scatter random coordinate points across space and time. Next... we ask the network for a prediction, then extract the Delta and Gamma directly from the network weights using Py Torch. Finally... we plug those derivatives into our P D E equation. We penalize the network until the vectors balance perfectly.")
         
         # Get absolute path to original file
         module_dir = self.scene_config.get("module_dir", ".")
@@ -459,79 +459,103 @@ class CodeWalkthroughScene(SciMLScene):
         )
         
         # Scale and position
-        code_window = rendered_code.scale(0.8).move_to(ORIGIN)
+        code_window = rendered_code.scale(0.65).move_to(ORIGIN)
         
         if "scene_5" in scene_id:
             with self.voiceover(text=voiceover_text, path=self.voiceover_path) as tracker:
                 total_duration = tracker.duration
                 
-                # Fade in code window
+                # Fade in code window fully opaque
                 self.play(FadeIn(code_window), run_time=total_duration * 0.1)
                 
-                # Active highlight object
-                active_rect = None
-                
                 # We have 3 highlights. Let's allocate time proportionally.
-                # Total proportional time left: 0.85 of total_duration
-                # We will split it into 3 segments: 0.25, 0.25, 0.25, and a final wait/fadeout of 0.15
-                segment_durations = [0.25, 0.25, 0.25]
+                # Total proportional time left: 0.90 of total_duration
+                # We will split it into 3 segments: 0.30, 0.30, 0.30
+                segment_durations = [0.30, 0.30, 0.30]
                 
                 for idx, hl in enumerate(highlights):
-                    hl_start = hl["lines"][0] - code_range[0]
-                    hl_end = hl["lines"][-1] - code_range[0]
-                    
+                    # Parse search_string or fallback to lines
+                    hl_start = 0
+                    hl_end = 0
+                    if "search_string" in hl:
+                        search_str = hl["search_string"]
+                        for i, line in enumerate(target_lines):
+                            if search_str in line:
+                                hl_start = i
+                                hl_end = i + hl.get("lines_count", 1) - 1
+                                break
+                    else:
+                        hl_start = hl["lines"][0] - code_range[0]
+                        hl_end = hl["lines"][-1] - code_range[0]
+                        
                     if hl_start >= 0 and hl_end < len(code_window.code_lines):
-                        # Combined line numbers and code text VGroup for highlight
-                        line_nums = code_window.line_numbers[hl_start : hl_end + 1]
-                        line_texts = code_window.code_lines[hl_start : hl_end + 1]
-                        lines_to_highlight = VGroup(line_nums, line_texts)
+                        # Center of the active lines
+                        active_group = VGroup(*[code_window.code_lines[i] for i in range(hl_start, min(hl_end + 1, len(code_window.code_lines)))])
+                        shift_y = -active_group.get_center()[1]
+                        shift_vector = np.array([0, shift_y, 0])
                         
-                        new_rect = SurroundingRectangle(
-                            lines_to_highlight,
-                            color=YELLOW, buff=0.1, fill_opacity=0.2
-                        )
+                        # Create target state
+                        target_window = code_window.copy()
+                        target_window.shift(shift_vector)
                         
+                        # Apply opacity changes to target
+                        for i, line in enumerate(target_window.code_lines):
+                            target_opacity = 1.0 if (hl_start <= i <= hl_end) else 0.2
+                            line.set_opacity(target_opacity)
+                        for i, num in enumerate(target_window.line_numbers):
+                            target_opacity = 1.0 if (hl_start <= i <= hl_end) else 0.2
+                            num.set_opacity(target_opacity)
+                            
                         run_time = total_duration * segment_durations[idx]
                         
-                        if active_rect is None:
-                            self.play(Create(new_rect), run_time=run_time * 0.3)
-                            active_rect = new_rect
-                            self.wait(run_time * 0.7)
-                        else:
-                            self.play(Transform(active_rect, new_rect), run_time=run_time * 0.3)
-                            self.wait(run_time * 0.7)
-                            
-                # Fade out everything
-                fade_out_anims = [FadeOut(code_window)]
-                if active_rect is not None:
-                    fade_out_anims.append(FadeOut(active_rect))
-                self.play(*fade_out_anims, run_time=total_duration * 0.15)
+                        self.play(
+                            Transform(code_window, target_window),
+                            run_time=run_time * 0.3
+                        )
+                        self.wait(run_time * 0.7)
+            
+            # Fade out everything AFTER the voiceover completes
+            self.play(FadeOut(code_window), run_time=total_duration * 0.15)
         else:
             # Fallback block for manual testing
             self.play(FadeIn(code_window), run_time=1.0)
-            active_rect = None
+            
             for hl in highlights:
-                hl_start = hl["lines"][0] - code_range[0]
-                hl_end = hl["lines"][-1] - code_range[0]
+                hl_start = 0
+                hl_end = 0
+                if "search_string" in hl:
+                    search_str = hl["search_string"]
+                    for i, line in enumerate(target_lines):
+                        if search_str in line:
+                            hl_start = i
+                            hl_end = i + hl.get("lines_count", 1) - 1
+                            break
+                else:
+                    hl_start = hl["lines"][0] - code_range[0]
+                    hl_end = hl["lines"][-1] - code_range[0]
+                    
                 if hl_start >= 0 and hl_end < len(code_window.code_lines):
-                    line_nums = code_window.line_numbers[hl_start : hl_end + 1]
-                    line_texts = code_window.code_lines[hl_start : hl_end + 1]
-                    lines_to_highlight = VGroup(line_nums, line_texts)
-                    new_rect = SurroundingRectangle(
-                        lines_to_highlight,
-                        color=YELLOW, buff=0.1, fill_opacity=0.2
+                    active_group = VGroup(*[code_window.code_lines[i] for i in range(hl_start, min(hl_end + 1, len(code_window.code_lines)))])
+                    shift_y = -active_group.get_center()[1]
+                    shift_vector = np.array([0, shift_y, 0])
+                    
+                    target_window = code_window.copy()
+                    target_window.shift(shift_vector)
+                    
+                    for i, line in enumerate(target_window.code_lines):
+                        target_opacity = 1.0 if (hl_start <= i <= hl_end) else 0.2
+                        line.set_opacity(target_opacity)
+                    for i, num in enumerate(target_window.line_numbers):
+                        target_opacity = 1.0 if (hl_start <= i <= hl_end) else 0.2
+                        num.set_opacity(target_opacity)
+                        
+                    self.play(
+                        Transform(code_window, target_window),
+                        run_time=0.5
                     )
-                    if active_rect is None:
-                        self.play(Create(new_rect), run_time=0.5)
-                        active_rect = new_rect
-                    else:
-                        self.play(Transform(active_rect, new_rect), run_time=0.5)
                     self.wait(2.0)
             
-            fade_out_anims = [FadeOut(code_window)]
-            if active_rect is not None:
-                fade_out_anims.append(FadeOut(active_rect))
-            self.play(*fade_out_anims, run_time=1.0)
+            self.play(FadeOut(code_window), run_time=1.0)
 
 
 # ---------------------------------------------------------

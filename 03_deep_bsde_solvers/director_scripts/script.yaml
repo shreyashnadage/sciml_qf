@@ -1,0 +1,146 @@
+# YAML SCRIPT GENERATION TEMPLATE
+# MODULE 3: BREAKING THE 100-DIMENSIONAL BARRIER (DEEP BSDEs)
+
+module: "03_deep_bsde_solvers"
+title: "Breaking the 100-Dimensional Barrier"
+resolution: "1920x1080"
+fps: 30
+
+music:
+  file: "media/audio/background.mp3"
+  volume: 0.1
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Professional, educational, measured pace."
+
+scenes:
+  # ---------------------------------------------------------
+  # SCENE 0: The Prologue (Dimensional Wall)
+  # ---------------------------------------------------------
+  - id: "scene_0_prologue"
+    type: animation
+    voiceover: >
+      In traditional quantitative finance... pricing an option on a single stock is a solved problem. 
+      But what happens when we need to price a basket option based on fifty correlated stocks? 
+      Traditional pricing engines rely on building spatial grids. But as the number of assets grows... the math explodes exponentially. A grid for fifty assets requires an impossible number of nodes. Traditional finance hits an absolute wall... the Curse of Dimensionality. 
+      Our goal in this module is to break that wall. We are going to abandon the grid entirely. By the end of this video... we will build a Deep B S D E solver... a neural network that can price a fifty asset basket option and compute its exact Delta... using nothing but random simulations and the rules of a hedging game.
+    instruct: "Urgent and captivating, setting a high-stakes goal."
+    manim_class: "Prologue"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 1: 1D Monte Carlo Basics
+  # ---------------------------------------------------------
+  - id: "scene_1_1d_mc"
+    type: animation
+    voiceover: >
+      To understand how we can achieve this... we first need to understand where standard Monte Carlo succeeds... and where it fails. 
+      Let us scale back to a single stock. We generate thousands of random market paths forward in time. At expiration... we check which paths finish above the strike price. 
+      The price of the option today... is simply the expected average of these payoffs... discounted back to the present.
+    instruct: "Clear and foundational."
+    manim_class: "MonteCarlo1D"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 2: Basket Option (2D to 3D)
+  # ---------------------------------------------------------
+  - id: "scene_2_basket_3d"
+    type: animation
+    voiceover: >
+      Now... let us add a second stock to our basket. We rotate our perspective and draw a new axis to track stock two. 
+      Instead of a flat line... our Monte Carlo simulation now generates paths that weave together through three dimensional space. 
+      At expiration... the geometric basket payoff is no longer a simple straight line... but a curved boundary based on the product of both stocks. 
+      We highlight the sector where the basket finishes in the money. Just like before... the price is simply the average discounted payoff of the paths that hit this profitable zone.
+    instruct: "Descriptive and guiding the viewer through the dimensional shift."
+    manim_class: "BasketOption3D"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 3: The Bump-and-Revalue Nightmare
+  # ---------------------------------------------------------
+  - id: "scene_3_bump_revalue"
+    type: animation
+    voiceover: >
+      Finding the price is only half the battle. To safely trade this option... we need to hedge our risk... which means computing the option's Delta. 
+      Using Monte Carlo... we approximate Delta with a finite difference equation. We bump the starting stock price up by a tiny amount... and re simulate the entire market distribution to see how the option value changes. We then do it again for a downward bump. 
+      For a single stock... this requires two full simulation batches. 
+      But what if our basket has fifty stocks? To find our exact hedging vector... we must bump every single stock independently. This requires one hundred full simulation batches. To calculate the Greeks for just one moment in time... our engine is forced to compute millions of paths.
+    instruct: "Emphasizing the overwhelming computational burden."
+    manim_class: "BumpAndRevalue"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 4: The Hedging Game (Deep BSDE)
+  # ---------------------------------------------------------
+  - id: "scene_4_hedging_game"
+    type: animation
+    voiceover: >
+      To break the curse of dimensionality... we completely abandon the grid. Instead... we turn option pricing into a hedging game. 
+      We set up a neural network to act as our algorithmic trader. 
+      First... it makes a blind guess for the option's initial price... Y zero. We deposit this exact dollar amount into a simulated bank account. 
+      Next... we simulate the stock market moving forward in time. At every step... the network looks at the market and outputs Z. In our Black Scholes world... Z is simply our Delta hedging strategy scaled by volatility. 
+      The true Backward Stochastic Differential Equation appears here. It is not abstract math... it is the literal ledger tracking our bank account. As the stock shocks up and down... our Z vector dictates how much cash we make or lose. 
+      At expiration... we compare our final bank account balance to the true option payoff. If our network traded poorly... we register a Loss.
+    instruct: "Engaging, explaining the math as mechanics of a game."
+    manim_class: "HedgingGame"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 5: The Architecture (Backprop)
+  # ---------------------------------------------------------
+  - id: "scene_5_architecture"
+    type: animation
+    voiceover: >
+      How does the network learn from its mistakes? We structure our architecture by unrolling the neural network across time. 
+      During the forward pass... the network observes the simulated stock path step by step. It makes a sequence of hedging decisions... passing our running wealth forward from today all the way to expiration. 
+      When we hit expiration... we compare our replicated wealth to the exact option payoff and calculate our Loss. 
+      Then... the magic of deep learning takes over. Using Py Torch... we calculate the gradients of that error and send them shooting backward through time via backpropagation. 
+      This backward pulse travels all the way to day zero. It updates the network's internal weights to hedge more accurately... but crucially... it also adjusts our starting cash dial. 
+      Through thousands of simulated paths... the network slowly turns that starting cash dial until the loss reaches zero. When it does... that starting cash is the true price of the option.
+    instruct: "Instructive, connecting backpropagation to the Backward SDE."
+    manim_class: "Architecture"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 6: Code Walkthrough
+  # ---------------------------------------------------------
+  - id: "scene_6_code"
+    type: animation
+    manim_class: "CodeWalkthroughScene"
+    source: "scenes.py"
+    voiceover: >
+      Let us look at the complete implementation. 
+      In section one... we define our fifty dimensional universe and write a function to simulate thousands of correlated market paths. 
+      In section two... we build the Deep B S D E architecture. We register Y zero as our master dial... representing our initial cash guess. Then... we build the neural agent... and unroll the hedging loop through all fifty time steps to compute our final wealth. 
+      In section three... the training loop. We calculate the exact geometric basket payoff. We compute the mean squared error between our final wealth and that true payoff... and use Py Torch backpropagation to tune the agent and find the price. 
+      Finally... the benchmarking section. Because geometric basket options have an analytical solution... we can compare our network's blind discovery directly against the mathematical truth.
+    instruct: "Technical but clear, guiding the viewer through the architecture."
+    code_file: "code/deep_bsde_solver.py"
+    code_range: [15, 95]
+    highlights:
+      - lines: [22, 33]
+        pause: 1.0
+      - lines: [37, 60]
+        pause: 1.0
+      - lines: [64, 80]
+        pause: 1.0
+      - lines: [84, 93]
+        pause: 1.0
+
+  # ---------------------------------------------------------
+  # SCENE 7: Mastery (The Scatter Plot)
+  # ---------------------------------------------------------
+  - id: "scene_7_artifact"
+    type: artifact
+    artifact_path: "code/bsde_scatter.png"
+    animation: "fade_in"
+    voiceover: >
+      To prove this works... we plot the final results. 
+      On the X axis... we have the true analytical payoff of the fifty asset option at expiration. On the Y axis... we have our neural network's replicated wealth. 
+      Before training... this is a random cloud of failures. 
+      But as the optimizer learns... look what happens. The scattered dots snap into a razor thin diagonal line. 
+      It does not matter what wild path the fifty stocks took. Our network traded them so perfectly that our final bank account matched the exact option payoff every single time. 
+      The starting cash required to achieve this perfect replication... is the true price. The curse of dimensionality... is broken.
+    instruct: "Triumphant, conclusive, and awe-inspiring."
+    source: "scenes.py"
