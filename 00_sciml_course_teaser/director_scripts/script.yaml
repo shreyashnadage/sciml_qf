@@ -1,0 +1,78 @@
+# YAML SCRIPT: QuantCatalysts Channel Teaser & Course Launch
+# Pipeline Configuration for Teaser Trailer Assembly
+
+module: "teaser"
+title: "QuantCatalysts Course Launch Teaser"
+resolution: "1920x1080"
+fps: 60
+
+music:
+  file: "media/audio/teaser_hype_synthwave.mp3"
+  volume: 0.15 
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Cinematic, intense, and authoritative. Like a modern tech documentary trailer."
+
+scenes:
+  # ---------------------------------------------------------
+  # BEAT 1: THE EXPERT HOOK
+  # ---------------------------------------------------------
+  - id: "teaser_beat_1_hook"
+    type: animation
+    voiceover: >
+      The era of the black box neural network is over. 
+      The trend is merging the two disciplines...allowing explainable models that are data-driven,
+      utilizing the knowledge encapsulated in centuries of scientific literature.
+    instruct: "Authoritative, serious, and impactful."
+    manim_class: "Beat1_RackauckasCard"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # BEAT 2: THE PROBLEM (Why SciML?)
+  # ---------------------------------------------------------
+  - id: "teaser_beat_2_panic"
+    type: animation
+    voiceover: >
+      For decades, finance relied on rigid, perfect calculus. 
+      But real markets are chaotic. Traditional mathematics breaks under the weight of real-world friction. 
+      The future belongs to Scientific Machine Learning.
+    instruct: "Start calm, but build tension. Strong emphasis on 'Scientific Machine Learning'."
+    manim_class: "Beat2_TangentPanic"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # BEAT 3: THE PEDAGOGY (Hands-on Code Walkthrough)
+  # ---------------------------------------------------------
+  - id: "teaser_beat_3_code"
+    type: animation
+    voiceover: >
+      We don't just teach dry theory. We build it. Line by line. 
+      Translating deep visual intuition directly into institutional-grade PyTorch code.
+    instruct: "Confident, practical, and inviting. Emphasize 'build it' and 'PyTorch'."
+    manim_class: "Beat3_CodeWalkthrough"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # BEAT 4: THE CAPABILITY (Visualizing the Physics)
+  # ---------------------------------------------------------
+  - id: "teaser_beat_4_solution"
+    type: animation
+    voiceover: >
+      We aren't just calculating the market; we are teaching neural networks to discover its laws. 
+      Bending dynamically to fit the physics of finance.
+    instruct: "Awe-inspiring and technological."
+    manim_class: "Beat4_ElasticSheet"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # BEAT 5: COURSE LAUNCH OUTRO
+  # ---------------------------------------------------------
+  - id: "teaser_beat_5_outro"
+    type: animation
+    voiceover: >
+      Kwant Catalysts is proud to announce our comprehensive new course: Scientific Machine Learning for Quantitative Finance. 
+      From physics-informed neural networks to deep hedging. Stop calculating. Start learning.
+    instruct: "Commanding and empowering. End with a strong, definitive tone."
+    manim_class: "Beat5_Outro"
+    source: "scenes.py"

@@ -93,12 +93,14 @@ scenes:
     type: animation
     voiceover: >
       How does the network learn from its mistakes? We structure our architecture by unrolling the neural network across time. 
-      During the forward pass... the network observes the simulated stock path step by step. It makes a sequence of hedging decisions... passing our running wealth forward from today all the way to expiration. 
-      When we hit expiration... we compare our replicated wealth to the exact option payoff and calculate our Loss. 
-      Then... the magic of deep learning takes over. Using Py Torch... we calculate the gradients of that error and send them shooting backward through time via backpropagation. 
-      This backward pulse travels all the way to day zero. It updates the network's internal weights to hedge more accurately... but crucially... it also adjusts our starting cash dial. 
-      Through thousands of simulated paths... the network slowly turns that starting cash dial until the loss reaches zero. When it does... that starting cash is the true price of the option.
-    instruct: "Instructive, connecting backpropagation to the Backward SDE."
+      The core engine driving this is the discretized Backward Stochastic Differential Equation. At each time step... the neural network observes the market and outputs Z... our hedging strategy. 
+      This hedge interacts with the market shock to generate our trading profit and loss. We add this to our current cash... resulting in our new wealth for the next step. 
+      The network makes this sequence of hedging decisions... passing our running wealth forward from today all the way to expiration. 
+      When we hit the final time step... we compare our replicated wealth to the exact option payoff and calculate our Loss. 
+      Then... the magic of deep learning takes over. Using Py Torch... we calculate the gradients of that error and send them shooting backward through time. 
+      This backward pulse travels all the way to day zero. It updates the network's internal weights to hedge more accurately... but critically... it also fine tunes our initial cash dial. 
+      Through thousands of simulated paths... the network slowly turns that dial until the replication error reaches zero. When it does... that starting cash is the true price of the option.
+    instruct: "Instructive, seamlessly connecting the math equation at the top to the network flow below."
     manim_class: "Architecture"
     source: "scenes.py"
 
@@ -117,15 +119,15 @@ scenes:
       Finally... the benchmarking section. Because geometric basket options have an analytical solution... we can compare our network's blind discovery directly against the mathematical truth.
     instruct: "Technical but clear, guiding the viewer through the architecture."
     code_file: "code/deep_bsde_solver.py"
-    code_range: [15, 95]
+    code_range: [15, 110]
     highlights:
-      - lines: [22, 33]
+      - lines: [25, 36]
         pause: 1.0
-      - lines: [37, 60]
+      - lines: [38, 54]
         pause: 1.0
-      - lines: [64, 80]
+      - lines: [56, 72]
         pause: 1.0
-      - lines: [84, 93]
+      - lines: [77, 102]
         pause: 1.0
 
   # ---------------------------------------------------------
@@ -136,11 +138,11 @@ scenes:
     artifact_path: "code/bsde_scatter.png"
     animation: "fade_in"
     voiceover: >
-      To prove this works... we plot the final results. 
-      On the X axis... we have the true analytical payoff of the fifty asset option at expiration. On the Y axis... we have our neural network's replicated wealth. 
-      Before training... this is a random cloud of failures. 
-      But as the optimizer learns... look what happens. The scattered dots snap into a razor thin diagonal line. 
-      It does not matter what wild path the fifty stocks took. Our network traded them so perfectly that our final bank account matched the exact option payoff every single time. 
-      The starting cash required to achieve this perfect replication... is the true price. The curse of dimensionality... is broken.
-    instruct: "Triumphant, conclusive, and awe-inspiring."
+      To prove this works... we plot the final results on a thousand unseen market paths. 
+      On the X axis... the true analytical payoff of the fifty asset option. On the Y axis... our neural network's final bank account. 
+      Notice the dense vertical cluster at zero. These are the out of the money paths where the basket crashed. The network autonomously learned this non linear boundary... knowing exactly when the option becomes worthless. 
+      For the paths that finish in the money... the dots tightly hug the white dashed line of perfect replication. 
+      There is a slight vertical spread... representing minor hedging errors because our agent can only trade once a day instead of continuously. But look at the scale of this achievement. 
+      In fifty dimensions... without a single grid point... the neural network hedged the chaos and found the true option price. The curse of dimensionality... is broken.
+    instruct: "Triumphant and awe-inspiring, but grounded and honest about the real-world variance shown on screen."
     source: "scenes.py"

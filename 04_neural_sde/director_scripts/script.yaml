@@ -1,0 +1,92 @@
+# YAML SCRIPT GENERATION TEMPLATE
+# MODULE 4: NEURAL SDES & MARKET SIGNATURES
+
+module: "04_neural_sdes"
+title: "Neural SDEs & Market Signatures"
+resolution: "1920x1080"
+fps: 30
+
+music:
+  file: "media/audio/background.mp3"
+  volume: 0.1
+
+voice:
+  speaker: "Ryan"
+  default_instruct: "Professional, educational, measured pace."
+
+scenes:
+  # ---------------------------------------------------------
+  # SCENE 1: Continuous vs Jump Paths
+  # ---------------------------------------------------------
+  - id: "scene_1_rough_paths"
+    type: animation
+    voiceover: >
+      In our previous modules, we assumed the market followed smooth, continuous equations like Geometric Brownian Motion. 
+      But real markets... like crypto or meme stocks... do not behave this way. They have violent jumps, fat tails, and microstructure noise. 
+      If we force a neural network to learn this exact jagged path, it chokes on the noise and memorizes the static instead of the underlying rules.
+    instruct: "Measured, setting up the contrast between theory and reality."
+    manim_class: "Act1_RoughPaths"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 2: The Path Signature
+  # ---------------------------------------------------------
+  - id: "scene_2_signatures"
+    type: animation
+    voiceover: >
+      How do we separate the signal from the noise? We use Rough Path Theory. 
+      As we scan the time series, we do not record every single noisy tick. Instead, we compute geometric attributes. 
+      We extract the overall shape, the area swept out by the curve, and the lead lag relationships between variables. 
+      These attributes combine into a single mathematical summary called a Signature. This signature is the clean language our A I can actually understand.
+    instruct: "Descriptive and methodical, focusing on the geometric extraction."
+    manim_class: "Act2_PathSignature"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 3: The Neural SDE
+  # ---------------------------------------------------------
+  - id: "scene_3_neural_sde"
+    type: animation
+    voiceover: >
+      Now, let us rewrite the rules of the market. Here is the classic stochastic differential equation. 
+      Instead of a human quant hardcoding the drift and the volatility, we replace these terms entirely with Neural Networks. 
+      The A I itself becomes the differential equation. It drives the random path. This is a Neural S D E.
+    instruct: "Emphasizing the physical transformation of the equation."
+    manim_class: "Act3_NeuralSDE"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 4: Generative Signature Loss
+  # ---------------------------------------------------------
+  - id: "scene_4_generative_loss"
+    type: animation
+    voiceover: >
+      To train this Generative Market Model, we compare reality against hallucination. 
+      On the left, we extract the signature of a real market path. On the right, our Neural S D E generates a synthetic path, and we extract its signature. 
+      We calculate the Mean Squared Error between these two signatures. 
+      By penalizing the geometric difference, the A I reverse engineers the true, hidden dynamics of the market without being distracted by the noise.
+    instruct: "Analytical and concluding."
+    manim_class: "Act4_GenerativeLoss"
+    source: "scenes.py"
+
+  # ---------------------------------------------------------
+  # SCENE 5: Code Walkthrough
+  # ---------------------------------------------------------
+  - id: "scene_5_code"
+    type: animation
+    manim_class: "CodeWalkthroughScene"
+    source: "scenes.py"
+    voiceover: >
+      Let us look at the Python script. First... we use the signatory library to compute the path signatures of our real historical data. 
+      Next... we define our Latent Neural S D E using the torch S D E library, assigning Py Torch linear layers to the drift and diffusion networks. 
+      Finally... we calculate our signature loss and run the optimizer. We are no longer just pricing options... we are simulating entirely new, realistic market realities.
+    instruct: "Technical but clear and guiding."
+    code_file: "code/neural_sde_model.py"
+    code_range: [20, 45]
+    highlights:
+      - lines: [22, 24] # Signatory
+        pause: 2.0
+      - lines: [30, 36] # torchsde classes
+        pause: 2.0
+      - lines: [41, 44] # MSE Loss
+        pause: 2.0
