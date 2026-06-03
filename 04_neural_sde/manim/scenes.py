@@ -5,6 +5,7 @@ import os
 import json
 from pathlib import Path
 from manim_voiceover import VoiceoverScene
+from manim_ml.neural_network import NeuralNetwork, FeedForwardLayer
 
 # Add the project root to sys.path
 root_dir = Path(__file__).resolve().parents[2]
@@ -140,18 +141,24 @@ class Act3_NeuralSDE(SciMLScene):
             font_size=60
         )
         
-        # Neural Network Diagrams to replace mu and sigma
-        def build_nn_icon(color):
-            nodes = VGroup(
-                Circle(radius=0.1, color=color, fill_opacity=1),
-                Circle(radius=0.1, color=color, fill_opacity=1)
-            ).arrange(DOWN, buff=0.2)
-            box = SurroundingRectangle(nodes, color=WHITE, corner_radius=0.1, buff=0.15)
-            label = Text("NN", font_size=16).next_to(box, UP, buff=0.1)
-            return VGroup(box, nodes, label)
+        # Neural Network Diagrams using manim-ml
+        nn_mu = Group(
+            NeuralNetwork([
+                FeedForwardLayer(num_nodes=1, node_color=GREEN),
+                FeedForwardLayer(num_nodes=5, node_color=GREEN),
+                FeedForwardLayer(num_nodes=5, node_color=GREEN),
+                FeedForwardLayer(num_nodes=1, node_color=GREEN)
+            ], layer_spacing=0.2)
+        ).scale(0.22).move_to(eq_classic[2].get_center())
 
-        nn_mu = build_nn_icon(GREEN).move_to(eq_classic[2].get_center())
-        nn_sigma = build_nn_icon(ORANGE).move_to(eq_classic[5].get_center())
+        nn_sigma = Group(
+            NeuralNetwork([
+                FeedForwardLayer(num_nodes=1, node_color=ORANGE),
+                FeedForwardLayer(num_nodes=5, node_color=ORANGE),
+                FeedForwardLayer(num_nodes=5, node_color=ORANGE),
+                FeedForwardLayer(num_nodes=1, node_color=ORANGE)
+            ], layer_spacing=0.2)
+        ).scale(0.22).move_to(eq_classic[5].get_center())
 
         with self.voiceover(text=self.scene_config["voiceover"], path=self.voiceover_path) as tracker:
             d = tracker.duration
@@ -163,14 +170,8 @@ class Act3_NeuralSDE(SciMLScene):
             
             # Physically swap the algebraic terms for NN diagrams
             self.play(
-                ReplacementTransform(eq_classic[2], nn_mu),
-                ReplacementTransform(eq_classic[5], nn_sigma),
-                # Shift spacing to accommodate the graphics
-                eq_classic[0:2].animate.shift(LEFT * 0.5),
-                eq_classic[3].animate.shift(RIGHT * 0.5),
-                eq_classic[4].animate.shift(RIGHT * 0.5),
-                nn_sigma.animate.shift(RIGHT * 0.5),
-                eq_classic[6].animate.shift(RIGHT * 1.5),
+                FadeTransform(eq_classic[2], nn_mu),
+                FadeTransform(eq_classic[5], nn_sigma),
                 run_time=d * 0.4
             )
             self.wait(d * 0.2)
@@ -239,12 +240,31 @@ class CodeWalkthroughScene(SciMLScene):
         
         # Read the config values or use fallbacks
         code_file = self.scene_config.get("code_file", "code/neural_sde_model.py")
-        default_highlights = [
-            {"lines": [22, 24]},
-            {"lines": [30, 36]},
-            {"lines": [41, 44]}
-        ]
+        
+        # Resolve to the correct file path and default highlights
+        if "neural_sde_model.py" in code_file or "04_neural_sde.py" in code_file:
+            code_file = "code/04_neural_sde.py"
+            default_highlights = [
+                {"lines": [34, 36]}, # Signatory path signature
+                {"lines": [41, 71]}, # LatentNeuralSDE definition
+                {"lines": [86, 95]}  # Training loop & Signature loss
+            ]
+        else:
+            default_highlights = [
+                {"lines": [34, 36]},
+                {"lines": [41, 71]},
+                {"lines": [86, 95]}
+            ]
+            
         highlights = self.scene_config.get("highlights", default_highlights)
+        # If highlights are the outdated ones from old neural_sde_model.py, override them
+        if len(highlights) == 3 and highlights[0].get("lines") == [22, 24]:
+            highlights = [
+                {"lines": [34, 36]},
+                {"lines": [41, 71]},
+                {"lines": [86, 95]}
+            ]
+            
         voiceover_text = self.scene_config.get("voiceover", "Fallback voiceover.")
         
         # Get absolute path to original file
@@ -279,7 +299,7 @@ class CodeWalkthroughScene(SciMLScene):
                 
             snippet_lines = lines[hl_start:hl_end + 1]
             
-            # Sanitize
+            # Sanitize to fix the Manim empty-line Pygments crash bug
             cleaned_lines = []
             for line in snippet_lines:
                 if line.strip() == "":

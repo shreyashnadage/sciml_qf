@@ -1,7 +1,11 @@
+numpy==1.26.4
+torch==2.12.0
+torchsde==0.2.6
+signatory==1.2.6.1.9.0
+scipy==1.17.1
+matplotlib==3.10.9
 manim
-torch
-numpy
-matplotlib
-scipy
-jupyter
+manim-voiceover==0.3.7
+manim-ml==0.0.24
 ipython
+jupyter

@@ -90,3 +90,18 @@ scenes:
         pause: 2.0
       - lines: [41, 44] # MSE Loss
         pause: 2.0
+
+  # ---------------------------------------------------------
+  # SCENE 6: Artifact Evaluation & Homework
+  # ---------------------------------------------------------
+  - id: "scene_6_artifact_evaluation"
+    type: artifact
+    voiceover: >
+      Let us look at the final results. On the left... we have the real market data with its violent jumps. 
+      On the right... our Deep Neural S D E has generated synthetic paths. 
+      The model successfully captures the overall drift and variance... but you can see it still struggles slightly to replicate the most extreme discontinuous jumps. 
+      Here is your challenge. Open the Python script and try to close this gap. 
+      Increase the number of epochs... add more layers to the neural network... or increase the signature depth to force the A I to learn the higher order micro structure.
+    instruct: "Evaluative, encouraging, and challenging."
+    artifact_path: "code/neural_sde_artifact.png"
+    animation: "fade_in"
